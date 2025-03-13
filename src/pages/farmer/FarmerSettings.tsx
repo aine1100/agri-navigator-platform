@@ -1,524 +1,284 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { User, Bell, Lock, MapPin, Cloud, LogOut } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "@/components/ui/use-toast";
 
-const profileSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  farmName: z.string().min(2, { message: "Farm name must be at least 2 characters" }),
-  address: z.string().min(5, { message: "Address must be at least 5 characters" }),
-  phone: z.string().min(5, { message: "Phone number must be at least 5 characters" }),
-  bio: z.string().optional(),
+const profileFormSchema = z.object({
+  name: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  phone: z.string().min(10, {
+    message: "Phone number must be at least 10 digits.",
+  }),
+  farmName: z.string().min(2, {
+    message: "Farm name must be at least 2 characters.",
+  }),
+  farmSize: z.string().min(1, {
+    message: "Farm size is required.",
+  }),
+  farmType: z.enum(["crops", "livestock", "mixed"], {
+    required_error: "Please select a farm type.",
+  }),
+  notifications: z.boolean().default(true),
+  weatherAlerts: z.boolean().default(true),
+  marketUpdates: z.boolean().default(false),
 });
 
-const notificationSchema = z.object({
-  emailNotifications: z.boolean(),
-  weatherAlerts: z.boolean(),
-  marketPriceUpdates: z.boolean(),
-  cropReminders: z.boolean(),
-  systemAnnouncements: z.boolean(),
-});
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
-const securitySchema = z.object({
-  currentPassword: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  newPassword: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  confirmPassword: z.string().min(6, { message: "Password must be at least 6 characters" }),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const defaultValues: Partial<ProfileFormValues> = {
+  name: "John Doe",
+  email: "john.doe@example.com",
+  phone: "1234567890",
+  farmName: "Green Valley Farm",
+  farmSize: "120",
+  farmType: "mixed",
+  notifications: true,
+  weatherAlerts: true,
+  marketUpdates: false,
+};
 
 const FarmerSettings = () => {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const profileForm = useForm({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: "John Doe",
-      email: "john.doe@example.com",
-      farmName: "Green Acres Farm",
-      address: "123 Farm Lane, Rural County",
-      phone: "(555) 123-4567",
-      bio: "I've been farming for over 15 years, specializing in sustainable crop rotation and organic farming practices.",
-    },
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues,
   });
 
-  const notificationForm = useForm({
-    resolver: zodResolver(notificationSchema),
-    defaultValues: {
-      emailNotifications: true,
-      weatherAlerts: true,
-      marketPriceUpdates: false,
-      cropReminders: true,
-      systemAnnouncements: false,
-    },
-  });
-
-  const securityForm = useForm({
-    resolver: zodResolver(securitySchema),
-    defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    },
-  });
-
-  const onProfileSubmit = (data: any) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      console.log("Profile data:", data);
-      toast({
-        title: "Profile updated",
-        description: "Your profile information has been updated successfully.",
-      });
-      setIsLoading(false);
-    }, 1000);
-  };
-
-  const onNotificationSubmit = (data: any) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      console.log("Notification settings:", data);
-      toast({
-        title: "Notification settings updated",
-        description: "Your notification preferences have been saved.",
-      });
-      setIsLoading(false);
-    }, 1000);
-  };
-
-  const onSecuritySubmit = (data: any) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      console.log("Security data:", data);
-      toast({
-        title: "Password changed",
-        description: "Your password has been updated successfully.",
-      });
-      setIsLoading(false);
-      securityForm.reset({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-    }, 1000);
-  };
+  function onSubmit(data: ProfileFormValues) {
+    toast({
+      title: "Settings Updated",
+      description: "Your profile settings have been saved successfully.",
+    });
+    console.log(data);
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
+    <div className="container max-w-4xl py-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground">
-          Manage your account settings and preferences
+          Manage your account settings and preferences.
         </p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="profile" className="flex items-center gap-2">
-            <User className="h-4 w-4" /> Profile
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" /> Notifications
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
-            <Lock className="h-4 w-4" /> Security
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="profile" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>
-                Update your personal and farm details
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...profileForm}>
-                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={profileForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={profileForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="email" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={profileForm.control}
-                      name="farmName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Farm Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={profileForm.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
+      <div className="space-y-8">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Profile Information</CardTitle>
+                <CardDescription>
+                  Update your personal and farm details.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
-                    control={profileForm.control}
-                    name="address"
+                    control={form.control}
+                    name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Farm Address</FormLabel>
+                        <FormLabel>Name</FormLabel>
                         <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={profileForm.control}
-                    name="bio"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Bio</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Tell us a bit about yourself and your farm"
-                            className="min-h-[120px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={isLoading}>
-                      {isLoading ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Farm Location</CardTitle>
-              <CardDescription>
-                Set your farm's location for accurate weather forecasts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <MapPin className="h-5 w-5 text-muted-foreground" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Current Location</p>
-                  <p className="text-sm text-muted-foreground">123 Farm Lane, Rural County, USA</p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Update
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>
-                Choose what notifications you want to receive
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...notificationForm}>
-                <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)} className="space-y-4">
-                  <FormField
-                    control={notificationForm.control}
-                    name="emailNotifications"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between p-3 border rounded-md">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Email Notifications</FormLabel>
-                          <FormDescription>
-                            Receive email notifications about your account
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={notificationForm.control}
-                    name="weatherAlerts"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between p-3 border rounded-md">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Weather Alerts</FormLabel>
-                          <FormDescription>
-                            Get notified about severe weather conditions
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={notificationForm.control}
-                    name="marketPriceUpdates"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between p-3 border rounded-md">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Market Price Updates</FormLabel>
-                          <FormDescription>
-                            Receive notifications about changes in market prices
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={notificationForm.control}
-                    name="cropReminders"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between p-3 border rounded-md">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Crop Reminders</FormLabel>
-                          <FormDescription>
-                            Get reminders for planting, fertilizing, and harvesting
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={notificationForm.control}
-                    name="systemAnnouncements"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between p-3 border rounded-md">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">System Announcements</FormLabel>
-                          <FormDescription>
-                            Receive updates about system changes and new features
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={isLoading}>
-                      {isLoading ? "Saving..." : "Save Preferences"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Password</CardTitle>
-              <CardDescription>
-                Change your password
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...securityForm}>
-                <form onSubmit={securityForm.handleSubmit(onSecuritySubmit)} className="space-y-4">
-                  <FormField
-                    control={securityForm.control}
-                    name="currentPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Current Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
+                          <Input placeholder="Your full name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
-                    control={securityForm.control}
-                    name="newPassword"
+                    control={form.control}
+                    name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>New Password</FormLabel>
+                        <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input type="password" {...field} />
+                          <Input placeholder="Your email address" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Your phone number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Separator className="my-4" />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="farmName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Farm Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Your farm name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
-                    control={securityForm.control}
-                    name="confirmPassword"
+                    control={form.control}
+                    name="farmSize"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Confirm New Password</FormLabel>
+                        <FormLabel>Farm Size (acres)</FormLabel>
                         <FormControl>
-                          <Input type="password" {...field} />
+                          <Input type="number" placeholder="Farm size in acres" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={isLoading}>
-                      {isLoading ? "Updating..." : "Update Password"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+                </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Data Backup</CardTitle>
-              <CardDescription>
-                Backup and restore your farm data
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Cloud className="h-5 w-5 text-muted-foreground" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Last Backup</p>
-                  <p className="text-sm text-muted-foreground">June 15, 2023 at 10:30 AM</p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Backup Now
-                </Button>
-              </div>
-              <Separator />
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Restore Data</p>
-                  <p className="text-sm text-muted-foreground">Restore your farm data from a backup</p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Restore
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                <FormField
+                  control={form.control}
+                  name="farmType"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Farm Type</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-col space-y-1"
+                        >
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="crops" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Crops Only</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="livestock" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Livestock Only</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="mixed" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Mixed Farming</FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Actions</CardTitle>
-              <CardDescription>
-                Manage your account status
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <LogOut className="h-5 w-5 text-destructive" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Sign Out From All Devices</p>
-                  <p className="text-sm text-muted-foreground">
-                    This will log you out from all devices where you're currently signed in
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Sign Out All
-                </Button>
-              </div>
-              <Separator />
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-destructive">Deactivate Account</p>
-                  <p className="text-sm text-muted-foreground">
-                    Temporarily deactivate your account
-                  </p>
-                </div>
-                <Button variant="destructive" size="sm">
-                  Deactivate
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            <Card>
+              <CardHeader>
+                <CardTitle>Notification Preferences</CardTitle>
+                <CardDescription>
+                  Manage your notification settings.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="notifications"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Enable Notifications
+                        </FormLabel>
+                        <FormDescription>
+                          Receive notifications about your farm activities.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="weatherAlerts"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Weather Alerts
+                        </FormLabel>
+                        <FormDescription>
+                          Get alerts for extreme weather conditions.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="marketUpdates"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Market Updates
+                        </FormLabel>
+                        <FormDescription>
+                          Receive updates about market prices for your products.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+              <CardFooter>
+                <Button type="submit">Save Changes</Button>
+              </CardFooter>
+            </Card>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };

@@ -15,6 +15,7 @@ import FarmerCrops from "./pages/farmer/FarmerCrops";
 import FarmerLivestock from "./pages/farmer/FarmerLivestock";
 import FarmerWeather from "./pages/farmer/FarmerWeather";
 import FarmerFinancials from "./pages/farmer/FarmerFinancials";
+import FarmerSettings from "./pages/farmer/FarmerSettings";
 import AdminFarmers from "./pages/admin/AdminFarmers";
 import AdminProduction from "./pages/admin/AdminProduction";
 import AdminRevenue from "./pages/admin/AdminRevenue";
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/farmer/livestock" element={<Layout><FarmerLivestock /></Layout>} />
           <Route path="/farmer/weather" element={<Layout><FarmerWeather /></Layout>} />
           <Route path="/farmer/financials" element={<Layout><FarmerFinancials /></Layout>} />
+          <Route path="/farmer/settings" element={<Layout><FarmerSettings /></Layout>} />
           
           {/* Admin routes */}
           <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
