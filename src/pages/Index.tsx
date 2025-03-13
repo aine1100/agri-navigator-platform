@@ -21,10 +21,10 @@ const Index = () => {
             <a href="#contact" className="text-sm font-medium hover:text-farm-forest">Contact</a>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/farmer">
+            <Link to="/login">
               <Button variant="outline" size="sm">Log in</Button>
             </Link>
-            <Link to="/farmer">
+            <Link to="/signup">
               <Button size="sm" className="bg-farm-forest text-white hover:bg-farm-forest/90">Sign up</Button>
             </Link>
           </div>
@@ -46,7 +46,7 @@ const Index = () => {
               Streamline your agricultural operations, track crop growth, manage livestock, and boost your farm's productivity with AgriNavigator.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
-              <Link to="/farmer">
+              <Link to="/signup">
                 <Button size="lg" className="bg-farm-green text-white hover:bg-farm-green/90 w-full sm:w-auto">
                   Get Started <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -125,7 +125,7 @@ const Index = () => {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Farm Management?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">Join thousands of satisfied farmers using AgriNavigator to grow their agricultural business.</p>
-          <Link to="/farmer">
+          <Link to="/signup">
             <Button size="lg" className="bg-white text-farm-forest hover:bg-white/90">
               Start Your Free Trial <ArrowRight className="h-4 w-4 ml-2" />
             </Button>

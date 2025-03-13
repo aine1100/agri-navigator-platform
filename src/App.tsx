@@ -46,6 +46,9 @@ const App = () => (
           <Route path="/admin/production" element={<Layout><AdminProduction /></Layout>} />
           <Route path="/admin/revenue" element={<Layout><AdminRevenue /></Layout>} />
           
+          {/* Redirects for any mismatched paths */}
+          <Route path="/farmer/finance" element={<Navigate to="/farmer/financials" replace />} />
+          
           {/* Fallback routes */}
           <Route path="*" element={<NotFound />} />
         </Routes>

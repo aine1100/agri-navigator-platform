@@ -39,7 +39,7 @@ const FarmerSidebar = () => {
     {
       title: "Financial Reports",
       icon: BarChart3,
-      url: "/farmer/finance",
+      url: "/farmer/financials",
     },
     {
       title: "Settings",
