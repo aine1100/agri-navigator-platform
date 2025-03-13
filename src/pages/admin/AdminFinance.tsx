@@ -175,7 +175,7 @@ const AdminFinance = () => {
                 <BarChart data={monthlyRevenueData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                   <XAxis dataKey="month" />
-                  <YAxis formatter={(value) => `$${(value/1000)}k`} />
+                  <YAxis tickFormatter={(value) => `$${(value/1000)}k`} />
                   <Tooltip 
                     formatter={(value) => [`$${value.toLocaleString()}`, '']}
                     labelStyle={{ color: '#374151' }}
@@ -188,7 +188,7 @@ const AdminFinance = () => {
                 <LineChart data={monthlyRevenueData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                   <XAxis dataKey="month" />
-                  <YAxis formatter={(value) => `$${(value/1000)}k`} />
+                  <YAxis tickFormatter={(value) => `$${(value/1000)}k`} />
                   <Tooltip 
                     formatter={(value) => [`$${value.toLocaleString()}`, '']}
                     labelStyle={{ color: '#374151' }}

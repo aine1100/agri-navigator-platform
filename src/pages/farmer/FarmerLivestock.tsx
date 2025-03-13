@@ -1,3 +1,4 @@
+
 import { Plus, Beef } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,10 +25,12 @@ interface Livestock {
 
 const livestockSchema = z.object({
   type: z.string().min(2, { message: "Type must be at least 2 characters" }),
-  count: z.string().transform(val => parseInt(val, 10)),
+  count: z.coerce.number().min(1, { message: "Count must be at least 1" }),
   healthStatus: z.enum(["healthy", "attention", "critical"]),
   notes: z.string().optional(),
 });
+
+type LivestockFormValues = z.infer<typeof livestockSchema>;
 
 const FarmerLivestock = () => {
   const { toast } = useToast();
@@ -68,24 +71,24 @@ const FarmerLivestock = () => {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const form = useForm({
+  const form = useForm<LivestockFormValues>({
     resolver: zodResolver(livestockSchema),
     defaultValues: {
       type: "",
-      count: "0",
+      count: 0,
       healthStatus: "healthy",
       notes: "",
     },
   });
 
-  const onSubmit = (data: z.infer<typeof livestockSchema>) => {
+  const onSubmit = (data: LivestockFormValues) => {
     const newLivestock: Livestock = {
       id: livestock.length + 1,
       type: data.type,
       count: data.count,
       healthStatus: data.healthStatus,
       lastChecked: new Date().toISOString().split('T')[0],
-      notes: data.notes,
+      notes: data.notes || "",
     };
     
     setLivestock([...livestock, newLivestock]);
