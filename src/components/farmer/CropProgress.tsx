@@ -1,5 +1,6 @@
 
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
 interface CropProgressProps {
   crop: string;
@@ -14,7 +15,7 @@ const CropProgress: React.FC<CropProgressProps> = ({ crop, progress, daysToHarve
         <span className="font-medium text-sm">{crop}</span>
         <span className="text-xs text-muted-foreground">{daysToHarvest} days to harvest</span>
       </div>
-      <Progress value={progress} className="h-2 bg-farm-wheat" indicatorClassName="bg-farm-green" />
+      <Progress value={progress} className={cn("h-2", progress < 30 ? "bg-amber-100" : "bg-farm-wheat")} />
     </div>
   );
 };
