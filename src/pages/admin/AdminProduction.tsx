@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import ProductionStats from "@/components/admin/ProductionStats";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowUpDown, GrainIcon, Tractor } from "lucide-react";
+import { ArrowUpDown, Wheat, Tractor } from "lucide-react"; // Changed GrainIcon to Wheat
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -205,7 +205,7 @@ const AdminProduction = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Crop Yield</CardTitle>
-            <GrainIcon className="h-4 w-4 text-farm-wheat" />
+            <Wheat className="h-4 w-4 text-farm-wheat" /> {/* Changed GrainIcon to Wheat */}
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalCropYield.toLocaleString()} tons</div>

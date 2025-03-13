@@ -1,5 +1,5 @@
 
-import { Cow, Plus } from "lucide-react";
+import { Plus, Beef } from "lucide-react"; // Changed Cow to Beef
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import LivestockStatus from "@/components/farmer/LivestockStatus";
@@ -74,7 +74,7 @@ const FarmerLivestock = () => {
     resolver: zodResolver(livestockSchema),
     defaultValues: {
       type: "",
-      count: "0",
+      count: "0", // This is a string now, will be transformed to number by zod
       healthStatus: "healthy",
       notes: "",
     },
@@ -201,7 +201,7 @@ const FarmerLivestock = () => {
                   <CardDescription>Last checked: {new Date(item.lastChecked).toLocaleDateString()}</CardDescription>
                 </div>
                 <div className="bg-farm-forest/10 w-8 h-8 flex items-center justify-center rounded-full">
-                  <Cow className="h-4 w-4 text-farm-forest" />
+                  <Beef className="h-4 w-4 text-farm-forest" /> {/* Changed Cow to Beef */}
                 </div>
               </div>
             </CardHeader>

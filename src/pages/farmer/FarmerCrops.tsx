@@ -1,5 +1,5 @@
 
-import { Seed, Plus } from "lucide-react";
+import { Plus, Wheat } from "lucide-react"; // Changed Seed to Wheat
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import CropProgress from "@/components/farmer/CropProgress";
@@ -173,7 +173,7 @@ const FarmerCrops = () => {
                   <CardDescription>Planted: {new Date(crop.plantedDate).toLocaleDateString()}</CardDescription>
                 </div>
                 <div className="bg-farm-forest/10 w-8 h-8 flex items-center justify-center rounded-full">
-                  <Seed className="h-4 w-4 text-farm-forest" />
+                  <Wheat className="h-4 w-4 text-farm-forest" /> {/* Changed Seed to Wheat */}
                 </div>
               </div>
             </CardHeader>
