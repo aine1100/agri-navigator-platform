@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import AuthLayout from "./AuthLayout";
+import UserTypeSelection from "./UserTypeSelection";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -19,6 +20,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showTypeSelection, setShowTypeSelection] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -37,20 +39,8 @@ const LoginForm = () => {
       // In a real app, this would connect to an authentication service
       console.log("Login credentials:", data);
       
-      // Simulate login success
-      setTimeout(() => {
-        toast({
-          title: "Login successful",
-          description: "Welcome back to your farm dashboard!",
-        });
-        
-        // Check email to determine role and redirect
-        if (data.email.includes("admin")) {
-          navigate("/admin");
-        } else {
-          navigate("/farmer");
-        }
-      }, 1000);
+      // Show user type selection after successful login
+      setShowTypeSelection(true);
     } catch (error) {
       toast({
         title: "Login failed",
@@ -61,6 +51,27 @@ const LoginForm = () => {
       setIsLoading(false);
     }
   };
+
+  const handleUserTypeSelection = (type: "farmer" | "admin") => {
+    toast({
+      title: "Login successful",
+      description: `Welcome back to your ${type === "farmer" ? "farm" : "admin"} dashboard!`,
+    });
+    
+    if (type === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/farmer");
+    }
+  };
+
+  if (showTypeSelection) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-farm-wheat/30 to-background p-4">
+        <UserTypeSelection onSelect={handleUserTypeSelection} />
+      </div>
+    );
+  }
 
   return (
     <AuthLayout

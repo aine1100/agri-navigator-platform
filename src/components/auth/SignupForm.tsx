@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import AuthLayout from "./AuthLayout";
 import { Checkbox } from "@/components/ui/checkbox";
+import UserTypeSelection from "./UserTypeSelection";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -23,6 +24,7 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 
 const SignupForm = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showTypeSelection, setShowTypeSelection] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -44,14 +46,8 @@ const SignupForm = () => {
       // In a real app, this would connect to an authentication service
       console.log("Signup data:", data);
       
-      // Simulate signup success
-      setTimeout(() => {
-        toast({
-          title: "Account created!",
-          description: "Welcome to Farm Management System.",
-        });
-        navigate("/login");
-      }, 1000);
+      // Show user type selection after successful signup
+      setShowTypeSelection(true);
     } catch (error) {
       toast({
         title: "Signup failed",
@@ -62,6 +58,27 @@ const SignupForm = () => {
       setIsLoading(false);
     }
   };
+
+  const handleUserTypeSelection = (type: "farmer" | "admin") => {
+    toast({
+      title: "Account created!",
+      description: `Welcome to Farm Management System. You are registered as a ${type}.`,
+    });
+    
+    if (type === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/farmer");
+    }
+  };
+
+  if (showTypeSelection) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-farm-wheat/30 to-background p-4">
+        <UserTypeSelection onSelect={handleUserTypeSelection} />
+      </div>
+    );
+  }
 
   return (
     <AuthLayout

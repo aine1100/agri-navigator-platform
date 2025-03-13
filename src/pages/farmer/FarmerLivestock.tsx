@@ -1,5 +1,4 @@
-
-import { Plus, Beef } from "lucide-react"; // Changed Cow to Beef
+import { Plus, Beef } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import LivestockStatus from "@/components/farmer/LivestockStatus";
@@ -8,19 +7,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const livestockSchema = z.object({
-  type: z.string().min(1, { message: "Livestock type is required" }),
-  count: z.string().transform(val => parseInt(val)),
-  healthStatus: z.enum(["healthy", "attention", "critical"]),
-  notes: z.string().optional(),
-});
-
-type LivestockFormValues = z.infer<typeof livestockSchema>;
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Livestock {
   id: number;
@@ -28,8 +19,15 @@ interface Livestock {
   count: number;
   healthStatus: "healthy" | "attention" | "critical";
   lastChecked: string;
-  notes?: string;
+  notes: string;
 }
+
+const livestockSchema = z.object({
+  type: z.string().min(2, { message: "Type must be at least 2 characters" }),
+  count: z.string().transform(val => parseInt(val, 10)),
+  healthStatus: z.enum(["healthy", "attention", "critical"]),
+  notes: z.string().optional(),
+});
 
 const FarmerLivestock = () => {
   const { toast } = useToast();
@@ -37,51 +35,50 @@ const FarmerLivestock = () => {
     { 
       id: 1, 
       type: "Cattle", 
-      count: 24, 
+      count: 42, 
       healthStatus: "healthy", 
-      lastChecked: "2023-06-15",
-      notes: "All cattle vaccinated and healthy"
+      lastChecked: "2023-06-15", 
+      notes: "All cattle are healthy and well-fed." 
     },
     { 
       id: 2, 
-      type: "Chickens", 
-      count: 150, 
+      type: "Pigs", 
+      count: 86, 
       healthStatus: "attention", 
-      lastChecked: "2023-06-14",
-      notes: "Some chickens showing signs of reduced appetite"
+      lastChecked: "2023-06-10", 
+      notes: "Some pigs showing signs of respiratory issues. Vet scheduled for next week." 
     },
     { 
       id: 3, 
-      type: "Pigs", 
-      count: 18, 
+      type: "Chickens", 
+      count: 120, 
       healthStatus: "healthy", 
-      lastChecked: "2023-06-16",
-      notes: "New feed introduced"
+      lastChecked: "2023-06-16", 
+      notes: "Egg production steady. Added new nesting boxes." 
     },
     { 
       id: 4, 
       type: "Sheep", 
-      count: 45, 
+      count: 35, 
       healthStatus: "critical", 
-      lastChecked: "2023-06-10",
-      notes: "Several sheep with suspected respiratory infection - vet visit scheduled"
+      lastChecked: "2023-06-12", 
+      notes: "Several sheep showing symptoms of potential disease. Vet coming tomorrow for emergency check-up." 
     }
   ]);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const form = useForm<LivestockFormValues>({
+  const form = useForm({
     resolver: zodResolver(livestockSchema),
     defaultValues: {
       type: "",
-      count: "0", // This is a string now, will be transformed to number by zod
+      count: "0",
       healthStatus: "healthy",
       notes: "",
     },
   });
 
-  const onSubmit = (data: LivestockFormValues) => {
-    // Add new livestock
+  const onSubmit = (data: z.infer<typeof livestockSchema>) => {
     const newLivestock: Livestock = {
       id: livestock.length + 1,
       type: data.type,
@@ -176,7 +173,7 @@ const FarmerLivestock = () => {
                     <FormItem>
                       <FormLabel>Notes (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Additional information" {...field} />
+                        <Textarea placeholder="Additional information" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -201,7 +198,7 @@ const FarmerLivestock = () => {
                   <CardDescription>Last checked: {new Date(item.lastChecked).toLocaleDateString()}</CardDescription>
                 </div>
                 <div className="bg-farm-forest/10 w-8 h-8 flex items-center justify-center rounded-full">
-                  <Beef className="h-4 w-4 text-farm-forest" /> {/* Changed Cow to Beef */}
+                  <Beef className="h-4 w-4 text-farm-forest" />
                 </div>
               </div>
             </CardHeader>
