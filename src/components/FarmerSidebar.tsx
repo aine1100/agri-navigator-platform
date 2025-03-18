@@ -1,84 +1,107 @@
 
-import { Calendar, Home, Leaf, Smartphone, BarChart3, Settings, CloudSun } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { 
+  Tractor, 
+  Leaf, 
+  Cloud, 
+  Wallet, 
+  User, 
+  ShoppingBag, 
+  LogOut 
+} from "lucide-react";
+
+import { cn } from "@/lib/utils";
 import {
   Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
+  SidebarHeaderTitle,
+  SidebarHeaderSubtitle,
+  SidebarContent,
+  SidebarNavLink,
   SidebarFooter,
+  SidebarButton,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { Link } from "react-router-dom";
 
 const FarmerSidebar = () => {
-  const menuItems = [
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { expanded } = useSidebar();
+
+  const links = [
     {
       title: "Dashboard",
-      icon: Home,
-      url: "/farmer",
+      icon: Tractor,
+      href: "/farmer",
+      active: location.pathname === "/farmer",
     },
     {
-      title: "My Crops",
+      title: "Crops",
       icon: Leaf,
-      url: "/farmer/crops",
+      href: "/farmer/crops",
+      active: location.pathname === "/farmer/crops",
     },
     {
       title: "Livestock",
-      icon: Smartphone,
-      url: "/farmer/livestock",
+      icon: Leaf,
+      href: "/farmer/livestock",
+      active: location.pathname === "/farmer/livestock",
     },
     {
-      title: "Weather Forecast",
-      icon: CloudSun,
-      url: "/farmer/weather",
+      title: "Weather",
+      icon: Cloud,
+      href: "/farmer/weather",
+      active: location.pathname === "/farmer/weather",
     },
     {
-      title: "Financial Reports",
-      icon: BarChart3,
-      url: "/farmer/financials",
+      title: "Financials",
+      icon: Wallet,
+      href: "/farmer/financials",
+      active: location.pathname === "/farmer/financials",
+    },
+    {
+      title: "Products",
+      icon: ShoppingBag,
+      href: "/farmer/products",
+      active: location.pathname === "/farmer/products",
     },
     {
       title: "Settings",
-      icon: Settings,
-      url: "/farmer/settings",
+      icon: User,
+      href: "/farmer/settings",
+      active: location.pathname === "/farmer/settings",
     },
   ];
 
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
-          <Leaf className="h-6 w-6 text-sidebar-foreground" />
-          <span className="font-bold text-lg text-sidebar-foreground">AgriNavigator</span>
-        </div>
+    <Sidebar className="border-r border-border">
+      <SidebarHeader>
+        <SidebarHeaderTitle>FarmFlow</SidebarHeaderTitle>
+        <SidebarHeaderSubtitle>Farmer Portal</SidebarHeaderSubtitle>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Farm Management</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link to={item.url}>
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent className="flex flex-col justify-between h-full">
+        <nav className="grid gap-1 px-2">
+          {links.map((link, index) => (
+            <SidebarNavLink
+              key={index}
+              active={link.active}
+              onClick={() => navigate(link.href)}
+              className={cn(
+                "cursor-pointer",
+                link.active && "text-primary bg-muted hover:bg-muted"
+              )}
+            >
+              <link.icon className="h-4 w-4 mr-2" />
+              {link.title}
+            </SidebarNavLink>
+          ))}
+        </nav>
       </SidebarContent>
       <SidebarFooter>
-        <div className="px-4 py-2 text-xs text-sidebar-foreground/70">
-          © 2023 AgriNavigator • v1.0
-        </div>
+        <SidebarButton>
+          <LogOut className="h-4 w-4 mr-2" />
+          {expanded ? "Logout" : ""}
+        </SidebarButton>
       </SidebarFooter>
     </Sidebar>
   );
