@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -310,7 +311,7 @@ const Marketplace = () => {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="">All Categories</SelectItem>
                 <SelectItem value="Crops">Crops</SelectItem>
                 <SelectItem value="Vegetables">Vegetables</SelectItem>
                 <SelectItem value="Fruits">Fruits</SelectItem>
@@ -505,4 +506,180 @@ const Marketplace = () => {
                         onClick={() => setPaymentMethod("credit-card")}
                       >
                         <CreditCard className="h-4 w-4 mr-2" />
-                        Credit
+                        Credit Card
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={paymentMethod === "bank-transfer" ? "default" : "outline"}
+                        className={`flex-1 ${paymentMethod === "bank-transfer" ? "bg-farm-forest hover:bg-farm-forest/90" : ""}`}
+                        onClick={() => setPaymentMethod("bank-transfer")}
+                      >
+                        Bank Transfer
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={paymentMethod === "cash-on-delivery" ? "default" : "outline"}
+                        className={`flex-1 ${paymentMethod === "cash-on-delivery" ? "bg-farm-forest hover:bg-farm-forest/90" : ""}`}
+                        onClick={() => setPaymentMethod("cash-on-delivery")}
+                      >
+                        Cash on Delivery
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {paymentMethod === "credit-card" && (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="card-number">Card Number</Label>
+                        <Input
+                          id="card-number"
+                          placeholder="1234 5678 9012 3456"
+                          value={cardNumber}
+                          onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                          maxLength={19}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="card-name">Cardholder Name</Label>
+                        <Input
+                          id="card-name"
+                          placeholder="John Doe"
+                          value={cardName}
+                          onChange={(e) => setCardName(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="card-expiry">Expiry Date</Label>
+                          <Input
+                            id="card-expiry"
+                            placeholder="MM/YY"
+                            value={cardExpiry}
+                            onChange={(e) => setCardExpiry(e.target.value)}
+                            maxLength={5}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="card-cvv">CVV</Label>
+                          <Input
+                            id="card-cvv"
+                            placeholder="123"
+                            value={cardCvv}
+                            onChange={(e) => setCvv(e.target.value)}
+                            maxLength={3}
+                            type="password"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {paymentMethod === "bank-transfer" && (
+                    <div className="space-y-4">
+                      <div className="bg-muted p-4 rounded-md text-sm">
+                        <p className="font-medium mb-2">Bank Transfer Details:</p>
+                        <p>Bank Name: Farm Fresh Bank</p>
+                        <p>Account Name: Farm Fresh Marketplace</p>
+                        <p>Account Number: 1234567890</p>
+                        <p>Sort Code: 12-34-56</p>
+                        <p>Reference: Your Order #</p>
+                        <p className="mt-2 italic">Please use your order number as reference when making the transfer.</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {paymentMethod === "cash-on-delivery" && (
+                    <div className="space-y-4">
+                      <div className="bg-muted p-4 rounded-md text-sm">
+                        <p>You will pay for your order when it's delivered to your address.</p>
+                        <p className="mt-2">Please have the exact amount ready to ensure a smooth delivery process.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <DialogFooter>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowPaymentDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="button"
+                    className="bg-farm-forest hover:bg-farm-forest/90"
+                    onClick={handlePayment}
+                    disabled={isProcessingPayment}
+                  >
+                    {isProcessingPayment ? "Processing..." : "Complete Payment"}
+                    {!isProcessingPayment && <ArrowRight className="h-4 w-4 ml-2" />}
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <footer className="bg-gray-100 py-8 border-t">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+              <div className="flex items-center mb-4">
+                <Store className="h-6 w-6 mr-2 text-farm-forest" />
+                <span className="font-bold text-xl">Farm Fresh</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Connecting farmers directly to consumers for fresher, more sustainable food.
+              </p>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-4">Quick Links</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/" className="text-sm text-muted-foreground hover:text-farm-forest">
+                    Home
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/marketplace" className="text-sm text-muted-foreground hover:text-farm-forest">
+                    Marketplace
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/farmer" className="text-sm text-muted-foreground hover:text-farm-forest">
+                    Become a Farmer
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/about" className="text-sm text-muted-foreground hover:text-farm-forest">
+                    About Us
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="font-semibold mb-4">Contact Us</h3>
+              <address className="not-italic text-sm text-muted-foreground space-y-2">
+                <p>123 Farm Road, Countryside</p>
+                <p>Email: info@farmfresh.com</p>
+                <p>Phone: (123) 456-7890</p>
+              </address>
+            </div>
+          </div>
+          
+          <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
+            <p>© {new Date().getFullYear()} Farm Fresh. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default Marketplace;
