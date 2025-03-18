@@ -11,8 +11,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, ShoppingCart, Filter, Store, Trash } from "lucide-react";
+import { Search, ShoppingCart, Filter, Store, Trash, CreditCard, CheckCircle, ArrowRight } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 const allProducts = [
   {
@@ -104,12 +120,22 @@ type CartItem = {
   unit: string;
 };
 
+type PaymentMethod = "credit-card" | "bank-transfer" | "cash-on-delivery";
+
 const Marketplace = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [showCart, setShowCart] = useState(false);
+  const [showCart, setShowCart] = useState(true);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("credit-card");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCvv] = useState("");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
 
   const filteredProducts = allProducts.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -169,13 +195,53 @@ const Marketplace = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
 
+  const initiateCheckout = () => {
+    if (cart.length === 0) {
+      toast({
+        title: "Cart is empty",
+        description: "Please add items to your cart before checkout.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setShowPaymentDialog(true);
+  };
+
+  const handlePayment = () => {
+    setIsProcessingPayment(true);
+    
+    // Simulate payment processing
+    setTimeout(() => {
+      setIsProcessingPayment(false);
+      setPaymentComplete(true);
+      
+      // Reset after showing success message
+      setTimeout(() => {
+        setPaymentComplete(false);
+        setShowPaymentDialog(false);
+        handleCheckout();
+      }, 2000);
+    }, 1500);
+  };
+
   const handleCheckout = () => {
     toast({
       title: "Order placed successfully!",
       description: "Your order has been placed and farmers have been notified.",
     });
     setCart([]);
-    setShowCart(false);
+  };
+
+  const formatCardNumber = (value: string) => {
+    const rawValue = value.replace(/\s+/g, '');
+    const parts = [];
+    
+    for (let i = 0; i < rawValue.length; i += 4) {
+      parts.push(rawValue.substring(i, i + 4));
+    }
+    
+    return parts.join(' ').trim();
   };
 
   return (
@@ -226,7 +292,7 @@ const Marketplace = () => {
           className="relative"
         >
           <ShoppingCart className="h-5 w-5 mr-2" />
-          <span>Cart</span>
+          <span>{showCart ? "Hide Cart" : "Show Cart"}</span>
           {cart.length > 0 && (
             <Badge className="absolute -top-2 -right-2 bg-farm-forest">
               {cart.reduce((total, item) => total + item.quantity, 0)}
@@ -235,14 +301,76 @@ const Marketplace = () => {
         </Button>
       </div>
 
-      {showCart && (
-        <div className="fixed inset-0 z-50 bg-black/50 md:bg-transparent md:inset-auto md:absolute md:top-[80px] md:right-4 md:left-auto md:bottom-auto">
-          <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white p-6 shadow-lg md:absolute md:rounded-lg md:max-h-[80vh] md:overflow-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <Store className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
+              <h3 className="mt-4 text-lg font-medium">No products found</h3>
+              <p className="text-muted-foreground">
+                Try adjusting your search or filter settings
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {filteredProducts.map((product) => (
+                <Card key={product.id} className="overflow-hidden">
+                  <div className="aspect-video bg-muted relative">
+                    <img 
+                      src={product.image} 
+                      alt={product.name} 
+                      className="h-full w-full object-cover" 
+                    />
+                  </div>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-lg">{product.name}</h3>
+                      <Badge variant="outline" className="ml-2">
+                        {product.category}
+                      </Badge>
+                    </div>
+                    
+                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                      {product.description}
+                    </p>
+                    
+                    <div className="flex items-center text-sm text-muted-foreground mb-3">
+                      <Store className="h-3.5 w-3.5 mr-1" />
+                      <span>{product.farmerName}</span>
+                      <span className="mx-1">•</span>
+                      <span>{product.location}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <div className="font-medium">
+                        ${product.price.toFixed(2)}
+                        <span className="text-sm text-muted-foreground ml-1">
+                          / {product.unit}
+                        </span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        onClick={() => addToCart(product)}
+                        className="bg-farm-forest hover:bg-farm-forest/90"
+                      >
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        <span>Add to Cart</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {showCart && (
+          <div className="border rounded-lg shadow-sm p-6 bg-white">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">Your Cart</h2>
-              <Button variant="ghost" size="sm" onClick={() => setShowCart(false)}>
-                Close
-              </Button>
+              <span className="text-sm text-muted-foreground">
+                {cart.length} {cart.length === 1 ? 'item' : 'items'}
+              </span>
             </div>
             
             {cart.length === 0 ? (
@@ -252,7 +380,7 @@ const Marketplace = () => {
               </div>
             ) : (
               <>
-                <div className="space-y-4 mb-6">
+                <div className="space-y-4 mb-6 max-h-[50vh] overflow-auto">
                   {cart.map((item) => (
                     <div key={item.productId} className="flex gap-4 py-2 border-b">
                       <div className="flex-1">
@@ -300,76 +428,182 @@ const Marketplace = () => {
                   </div>
                   <Button 
                     className="w-full bg-farm-forest hover:bg-farm-forest/90"
-                    onClick={handleCheckout}
+                    onClick={initiateCheckout}
                   >
-                    Checkout
+                    Proceed to Checkout
+                    <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
               </>
             )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {filteredProducts.length === 0 ? (
-        <div className="text-center py-12">
-          <Store className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-          <h3 className="mt-4 text-lg font-medium">No products found</h3>
-          <p className="text-muted-foreground">
-            Try adjusting your search or filter settings
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => (
-            <Card key={product.id} className="overflow-hidden">
-              <div className="aspect-video bg-muted relative">
-                <img 
-                  src={product.image} 
-                  alt={product.name} 
-                  className="h-full w-full object-cover" 
-                />
-              </div>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg">{product.name}</h3>
-                  <Badge variant="outline" className="ml-2">
-                    {product.category}
-                  </Badge>
-                </div>
-                
-                <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                  {product.description}
-                </p>
-                
-                <div className="flex items-center text-sm text-muted-foreground mb-3">
-                  <Store className="h-3.5 w-3.5 mr-1" />
-                  <span>{product.farmerName}</span>
-                  <span className="mx-1">•</span>
-                  <span>{product.location}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <div className="font-medium">
-                    ${product.price.toFixed(2)}
-                    <span className="text-sm text-muted-foreground ml-1">
-                      / {product.unit}
-                    </span>
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          {paymentComplete ? (
+            <div className="py-6 text-center">
+              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <DialogTitle className="text-xl mb-2">Payment Successful!</DialogTitle>
+              <DialogDescription>
+                Your order is confirmed and the farmers have been notified.
+              </DialogDescription>
+            </div>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Complete Your Purchase</DialogTitle>
+                <DialogDescription>
+                  Select a payment method and enter your details to complete your order.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid gap-6 py-4">
+                <div className="space-y-2">
+                  <Label>Select Payment Method</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={paymentMethod === "credit-card" ? "default" : "outline"}
+                      className={`flex-1 ${paymentMethod === "credit-card" ? "bg-farm-forest hover:bg-farm-forest/90" : ""}`}
+                      onClick={() => setPaymentMethod("credit-card")}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Credit Card
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={paymentMethod === "bank-transfer" ? "default" : "outline"}
+                      className={`flex-1 ${paymentMethod === "bank-transfer" ? "bg-farm-forest hover:bg-farm-forest/90" : ""}`}
+                      onClick={() => setPaymentMethod("bank-transfer")}
+                    >
+                      Bank Transfer
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={paymentMethod === "cash-on-delivery" ? "default" : "outline"}
+                      className={`flex-1 ${paymentMethod === "cash-on-delivery" ? "bg-farm-forest hover:bg-farm-forest/90" : ""}`}
+                      onClick={() => setPaymentMethod("cash-on-delivery")}
+                    >
+                      Cash on Delivery
+                    </Button>
                   </div>
-                  <Button 
-                    size="sm" 
-                    onClick={() => addToCart(product)}
-                    className="bg-farm-forest hover:bg-farm-forest/90"
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    <span>Add to Cart</span>
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                
+                {paymentMethod === "credit-card" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="cardName">Cardholder Name</Label>
+                      <Input
+                        id="cardName"
+                        value={cardName}
+                        onChange={(e) => setCardName(e.target.value)}
+                        placeholder="Name on card"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="cardNumber">Card Number</Label>
+                      <Input
+                        id="cardNumber"
+                        value={cardNumber}
+                        onChange={(e) => {
+                          const formatted = formatCardNumber(e.target.value);
+                          if (formatted.length <= 19) { // 16 digits + 3 spaces
+                            setCardNumber(formatted);
+                          }
+                        }}
+                        placeholder="0000 0000 0000 0000"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="expiry">Expiry Date</Label>
+                        <Input
+                          id="expiry"
+                          value={cardExpiry}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            if (value.length <= 4) {
+                              const formatted = value.length > 2 
+                                ? `${value.slice(0, 2)}/${value.slice(2)}`
+                                : value;
+                              setCardExpiry(formatted);
+                            }
+                          }}
+                          placeholder="MM/YY"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cvv">CVV</Label>
+                        <Input
+                          id="cvv"
+                          value={cardCvv}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            if (value.length <= 3) {
+                              setCvv(value);
+                            }
+                          }}
+                          placeholder="123"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+                
+                {paymentMethod === "bank-transfer" && (
+                  <div className="bg-muted p-4 rounded-md">
+                    <p className="font-medium mb-2">Bank Transfer Details</p>
+                    <p className="text-sm mb-1">Account Name: Farm Fresh Market</p>
+                    <p className="text-sm mb-1">Account Number: 123456789</p>
+                    <p className="text-sm mb-1">Bank: Agriculture Bank</p>
+                    <p className="text-sm">Reference: Please use your order number as reference</p>
+                  </div>
+                )}
+                
+                {paymentMethod === "cash-on-delivery" && (
+                  <div className="bg-muted p-4 rounded-md">
+                    <p className="text-sm">You'll pay when your products are delivered. Please have the exact amount ready.</p>
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between font-medium">
+                    <span>Total Amount:</span>
+                    <span>${getTotalPrice().toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowPaymentDialog(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  className="bg-farm-forest hover:bg-farm-forest/90"
+                  onClick={handlePayment}
+                  disabled={isProcessingPayment || (
+                    paymentMethod === "credit-card" && (
+                      !cardName || 
+                      !cardNumber || 
+                      !cardExpiry || 
+                      !cardCvv || 
+                      cardNumber.replace(/\s/g, '').length < 16 ||
+                      cardExpiry.length < 5 ||
+                      cardCvv.length < 3
+                    )
+                  )}
+                >
+                  {isProcessingPayment ? "Processing..." : "Complete Payment"}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
