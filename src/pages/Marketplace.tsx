@@ -126,7 +126,7 @@ type PaymentMethod = "credit-card" | "bank-transfer" | "cash-on-delivery";
 const Marketplace = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(true);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
@@ -143,7 +143,7 @@ const Marketplace = () => {
                          product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.farmerName.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesCategory = selectedCategory === "" || product.category === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     
     return matchesSearch && matchesCategory;
   });
@@ -311,7 +311,7 @@ const Marketplace = () => {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 <SelectItem value="Crops">Crops</SelectItem>
                 <SelectItem value="Vegetables">Vegetables</SelectItem>
                 <SelectItem value="Fruits">Fruits</SelectItem>
