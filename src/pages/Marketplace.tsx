@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, ShoppingCart, Filter, Store } from "lucide-react";
+import { Search, ShoppingCart, Filter, Store, Trash } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 // Mock data - would connect to a database in a real application

@@ -25,6 +25,18 @@ import {
 import { Plus, Edit, Trash, ShoppingBag, Tags } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
+// Create a type for our product
+type Product = {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  quantity: number;
+  unit: string;
+  description: string;
+  image: string;
+};
+
 const productSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters"),
   category: z.string().min(1, "Please select a category"),
@@ -38,7 +50,7 @@ const productSchema = z.object({
 type ProductFormValues = z.infer<typeof productSchema>;
 
 // Mock data - would connect to a database in a real application
-const initialProducts = [
+const initialProducts: Product[] = [
   {
     id: "1",
     name: "Organic Corn",
@@ -63,7 +75,7 @@ const initialProducts = [
 
 const FarmerProducts = () => {
   const { toast } = useToast();
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   const form = useForm<ProductFormValues>({
@@ -85,7 +97,16 @@ const FarmerProducts = () => {
       setProducts(
         products.map((product) =>
           product.id === editingProductId
-            ? { ...product, ...data }
+            ? { 
+                ...product, 
+                name: data.name,
+                category: data.category,
+                price: data.price,
+                quantity: data.quantity,
+                unit: data.unit,
+                description: data.description || "",
+                image: data.image || "/placeholder.svg"
+              }
             : product
         )
       );
@@ -96,9 +117,15 @@ const FarmerProducts = () => {
       setEditingProductId(null);
     } else {
       // Add new product
-      const newProduct = {
+      const newProduct: Product = {
         id: Date.now().toString(),
-        ...data,
+        name: data.name,
+        category: data.category,
+        price: data.price,
+        quantity: data.quantity,
+        unit: data.unit,
+        description: data.description || "",
+        image: data.image || "/placeholder.svg",
       };
       setProducts([...products, newProduct]);
       toast({

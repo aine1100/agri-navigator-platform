@@ -83,17 +83,17 @@ const Index = () => {
           <div className="grid md:grid-cols-3 gap-8">
             <TestimonialCard 
               quote="FarmFlow has revolutionized how I manage my farm. I've saved countless hours on paperwork and planning."
-              author="John D."
+              name="John D."
               role="Crop Farmer"
             />
             <TestimonialCard 
               quote="The marketplace feature has opened up new revenue streams for our family farm. We're now selling directly to consumers at better prices."
-              author="Sarah M."
+              name="Sarah M."
               role="Dairy Farmer"
             />
             <TestimonialCard 
               quote="I love how everything is integrated in one platform. The weather forecasts have been incredibly accurate and helpful."
-              author="Michael R."
+              name="Michael R."
               role="Mixed Farm Owner"
             />
           </div>

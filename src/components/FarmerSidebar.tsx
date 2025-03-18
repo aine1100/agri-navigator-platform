@@ -14,19 +14,18 @@ import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarHeader,
-  SidebarHeaderTitle,
-  SidebarHeaderSubtitle,
   SidebarContent,
-  SidebarNavLink,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
   SidebarFooter,
-  SidebarButton,
   useSidebar,
 } from "@/components/ui/sidebar";
 
 const FarmerSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { expanded } = useSidebar();
+  const { state } = useSidebar();
 
   const links = [
     {
@@ -76,32 +75,35 @@ const FarmerSidebar = () => {
   return (
     <Sidebar className="border-r border-border">
       <SidebarHeader>
-        <SidebarHeaderTitle>FarmFlow</SidebarHeaderTitle>
-        <SidebarHeaderSubtitle>Farmer Portal</SidebarHeaderSubtitle>
+        <h2 className="text-xl font-bold">FarmFlow</h2>
+        <p className="text-sm text-muted-foreground">Farmer Portal</p>
       </SidebarHeader>
       <SidebarContent className="flex flex-col justify-between h-full">
         <nav className="grid gap-1 px-2">
-          {links.map((link, index) => (
-            <SidebarNavLink
-              key={index}
-              active={link.active}
-              onClick={() => navigate(link.href)}
-              className={cn(
-                "cursor-pointer",
-                link.active && "text-primary bg-muted hover:bg-muted"
-              )}
-            >
-              <link.icon className="h-4 w-4 mr-2" />
-              {link.title}
-            </SidebarNavLink>
-          ))}
+          <SidebarMenu>
+            {links.map((link, index) => (
+              <SidebarMenuItem key={index}>
+                <SidebarMenuButton
+                  isActive={link.active}
+                  onClick={() => navigate(link.href)}
+                  className={cn(
+                    "cursor-pointer",
+                    link.active && "text-primary bg-muted hover:bg-muted"
+                  )}
+                >
+                  <link.icon className="h-4 w-4 mr-2" />
+                  {link.title}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
         </nav>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarButton>
+        <SidebarMenuButton>
           <LogOut className="h-4 w-4 mr-2" />
-          {expanded ? "Logout" : ""}
-        </SidebarButton>
+          {state === "expanded" ? "Logout" : ""}
+        </SidebarMenuButton>
       </SidebarFooter>
     </Sidebar>
   );
