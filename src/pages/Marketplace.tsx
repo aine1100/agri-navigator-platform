@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Search, ShoppingCart, Filter, Store, Trash } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
-// Mock data - would connect to a database in a real application
 const allProducts = [
   {
     id: "1",
@@ -112,7 +111,6 @@ const Marketplace = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
 
-  // Filter products based on search term and category
   const filteredProducts = allProducts.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -125,18 +123,15 @@ const Marketplace = () => {
 
   const addToCart = (product: typeof allProducts[0]) => {
     setCart(prevCart => {
-      // Check if product is already in cart
       const existingItem = prevCart.find(item => item.productId === product.id);
       
       if (existingItem) {
-        // Update quantity if already in cart
         return prevCart.map(item => 
           item.productId === product.id 
             ? { ...item, quantity: item.quantity + 1 } 
             : item
         );
       } else {
-        // Add new item to cart
         return [...prevCart, {
           productId: product.id,
           name: product.name,
@@ -214,7 +209,7 @@ const Marketplace = () => {
               </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               <SelectItem value="Crops">Crops</SelectItem>
               <SelectItem value="Vegetables">Vegetables</SelectItem>
               <SelectItem value="Fruits">Fruits</SelectItem>
@@ -240,7 +235,6 @@ const Marketplace = () => {
         </Button>
       </div>
 
-      {/* Cart slide-in panel */}
       {showCart && (
         <div className="fixed inset-0 z-50 bg-black/50 md:bg-transparent md:inset-auto md:absolute md:top-[80px] md:right-4 md:left-auto md:bottom-auto">
           <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white p-6 shadow-lg md:absolute md:rounded-lg md:max-h-[80vh] md:overflow-auto">
@@ -317,7 +311,6 @@ const Marketplace = () => {
         </div>
       )}
 
-      {/* Product listings */}
       {filteredProducts.length === 0 ? (
         <div className="text-center py-12">
           <Store className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
