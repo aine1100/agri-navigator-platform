@@ -48,7 +48,7 @@ const AdminSidebar = () => {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
           <Leaf className="h-6 w-6 text-sidebar-foreground" />
-          <span className="font-bold text-lg text-sidebar-foreground">AgriNavigator</span>
+          <span className="font-bold text-lg text-sidebar-foreground">Hinga</span>
           <span className="text-xs bg-farm-green text-white px-2 py-0.5 rounded-full ml-2">
             Admin
           </span>
@@ -75,7 +75,7 @@ const AdminSidebar = () => {
       </SidebarContent>
       <SidebarFooter>
         <div className="px-4 py-2 text-xs text-sidebar-foreground/70">
-          © 2023 AgriNavigator Admin • v1.0
+          © 2025 Hinga Admin • v1.0
         </div>
       </SidebarFooter>
     </Sidebar>

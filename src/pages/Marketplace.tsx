@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, ShoppingCart, Filter, Store, Trash, CreditCard, CheckCircle, ArrowRight, Home, User, LogIn } from "lucide-react";
+import { Search,Leaf, ShoppingCart, Filter, Store, Trash, CreditCard, CheckCircle, ArrowRight, Home, User, LogIn,ShoppingBag, HomeIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Sheet,
@@ -247,46 +247,44 @@ const Marketplace = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-farm-forest text-white py-4 shadow-md">
-        <div className="container mx-auto px-4 flex items-center justify-between">
-          <div className="flex items-center space-x-6">
-            <Link to="/" className="flex items-center">
-              <Store className="h-6 w-6 mr-2" />
-              <span className="font-bold text-xl">Farm Fresh</span>
-            </Link>
-            <nav className="hidden md:flex space-x-6">
-              <Link to="/" className="hover:text-gray-200 flex items-center">
-                <Home className="h-4 w-4 mr-1" />
-                <span>Home</span>
-              </Link>
-              <Link to="/marketplace" className="hover:text-gray-200 flex items-center font-bold border-b-2 border-white">
-                <Store className="h-4 w-4 mr-1" />
-                <span>Marketplace</span>
-              </Link>
-              <Link to="/farmer" className="hover:text-gray-200 flex items-center">
-                <User className="h-4 w-4 mr-1" />
-                <span>Farmer Portal</span>
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link to="/login" className="hover:text-gray-200 flex items-center">
-              <LogIn className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Login</span>
-            </Link>
-            <Link to="/signup" className="bg-white text-farm-forest px-3 py-1 rounded-full text-sm font-medium hover:bg-gray-100">
-              Sign Up
-            </Link>
-          </div>
+      <header className="container mx-auto px-4 py-6 md:py-8 flex items-center justify-between">
+        <Link to="/" className="flex items-center space-x-2">
+          <Leaf className="h-6 w-6 text-farm-forest" />
+          <span className="text-xl font-bold">Hinga</span>
+        </Link>
+        <div className="flex items-center space-x-4">
+        <Link to="/">
+            <Button variant="ghost" size="sm">
+              <HomeIcon className="h-4 w-4 mr-2" />
+             Home
+            </Button>
+          </Link>
+          <Link to="/marketplace">
+            <Button variant="ghost" size="sm">
+              <ShoppingBag className="h-4 w-4 mr-2" />
+              Marketplace
+            </Button>
+          </Link>
+         
+          <Link to="/login">
+            <Button variant="ghost" size="sm">Login</Button>
+          </Link>
+          <Link to="/signup">
+            <Button variant="default" size="sm">Sign Up</Button>
+          </Link>
         </div>
       </header>
 
+
       <div className="container mx-auto px-4 py-8 flex-1">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold mb-2">Farm Fresh Marketplace</h1>
+          <h1 className="text-3xl font-bold mb-2">Hinga Marketplace</h1>
           <p className="text-muted-foreground">
             Browse and purchase fresh products directly from local farmers
           </p>
+
+
+          
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 mb-8">
@@ -629,8 +627,8 @@ const Marketplace = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <Store className="h-6 w-6 mr-2 text-farm-forest" />
-                <span className="font-bold text-xl">Farm Fresh</span>
+                <Leaf className="h-6 w-6 mr-2 text-farm-forest" />
+                <span className="font-bold text-xl">Hinga </span>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
                 Connecting farmers directly to consumers for fresher, more sustainable food.
@@ -667,14 +665,14 @@ const Marketplace = () => {
               <h3 className="font-semibold mb-4">Contact Us</h3>
               <address className="not-italic text-sm text-muted-foreground space-y-2">
                 <p>123 Farm Road, Countryside</p>
-                <p>Email: info@farmfresh.com</p>
+                <p>Email: info@Hinga.com</p>
                 <p>Phone: (123) 456-7890</p>
               </address>
             </div>
           </div>
           
           <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} Farm Fresh. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Hinga. All rights reserved.</p>
           </div>
         </div>
       </footer>

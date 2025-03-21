@@ -75,7 +75,7 @@ const FarmerSidebar = () => {
   return (
     <Sidebar className="border-r border-border">
       <SidebarHeader>
-        <h2 className="text-xl font-bold">FarmFlow</h2>
+        <h2 className="text-xl font-bold">Hinga</h2>
         <p className="text-sm text-muted-foreground">Farmer Portal</p>
       </SidebarHeader>
       <SidebarContent className="flex flex-col justify-between h-full">

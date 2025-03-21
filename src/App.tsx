@@ -21,6 +21,8 @@ import Marketplace from "./pages/Marketplace";
 import AdminFarmers from "./pages/admin/AdminFarmers";
 import AdminProduction from "./pages/admin/AdminProduction";
 import AdminRevenue from "./pages/admin/AdminRevenue";
+import AdminCrops from "./pages/admin/AdminCrops";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -50,8 +52,10 @@ const App = () => (
           <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
           <Route path="/admin/farmers" element={<Layout><AdminFarmers /></Layout>} />
           <Route path="/admin/production" element={<Layout><AdminProduction /></Layout>} />
-          <Route path="/admin/revenue" element={<Layout><AdminRevenue /></Layout>} />
-          
+          <Route path="/admin/finance" element={<Layout><AdminRevenue /></Layout>} />
+          <Route path="/admin/crops" element={<Layout><AdminCrops /></Layout>} />
+          <Route path="/admin/settings" element={<Layout><AdminSettings /></Layout>} />
+
           {/* Redirects for any mismatched paths */}
           <Route path="/farmer/finance" element={<Navigate to="/farmer/financials" replace />} />
           
