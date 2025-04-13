@@ -30,21 +30,47 @@ const LoginForm = () => {
       email: "",
       password: "",
     },
+    mode:"onChange"
   });
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     
+    console.log("Attempting form submission with data:", data);
+    setIsLoading(true);
     try {
-      // In a real app, this would connect to an authentication service
-      console.log("Login credentials:", data);
-      
-      // Show user type selection after successful login
-      setShowTypeSelection(true);
-    } catch (error) {
+      const response = await fetch("http://localhost:8080/api/auth/farmerLogin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      console.log("Raw response:", await response.text().catch(e => `Error reading response: ${e}`));
+
+      // If registration was successful, proceed even if JSON parsing fails
+      if (response.ok) {
+        console.log("Login successful");
+        toast({
+          title: "Account created!",
+          description: "Welcome to Farm Management System. You are Login as a farmer.",
+        });
+        setShowTypeSelection(true);
+      } else {
+        const errorMessage = "Login failed. Please try again.";
+        console.error("Login failed:", response.status, response.statusText);
+        toast({
+          title: "Login failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+    } catch (error: unknown) {
+      console.error("Signup error:", error);
       toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
+        title: "Signup failed",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
