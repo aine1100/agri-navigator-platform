@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -37,7 +36,6 @@ const LoginForm = () => {
     setIsLoading(true);
     
     console.log("Attempting form submission with data:", data);
-    setIsLoading(true);
     try {
       const response = await fetch("http://localhost:8080/api/auth/farmerLogin", {
         method: "POST",
@@ -47,18 +45,28 @@ const LoginForm = () => {
         body: JSON.stringify(data),
       });
 
-      console.log("Raw response:", await response.text().catch(e => `Error reading response: ${e}`));
+      const responseText = await response.text();
+      console.log("Raw response:", responseText);
 
-      // If registration was successful, proceed even if JSON parsing fails
       if (response.ok) {
-        console.log("Login successful");
-        toast({
-          title: "Account created!",
-          description: "Welcome to Farm Management System. You are Login as a farmer.",
-        });
-        setShowTypeSelection(true);
+        // Extract token from response
+        const tokenMatch = responseText.match(/Token: (.+)$/);
+        if (tokenMatch && tokenMatch[1]) {
+          const token = tokenMatch[1];
+          // Store token in localStorage
+          localStorage.setItem("token", token);
+          
+          console.log("Login successful");
+          toast({
+            title: "Login successful!",
+            description: "Welcome back to Farm Management System.",
+          });
+          setShowTypeSelection(true);
+        } else {
+          throw new Error("Token not found in response");
+        }
       } else {
-        const errorMessage = "Login failed. Please try again.";
+        const errorMessage = responseText || "Login failed. Please try again.";
         console.error("Login failed:", response.status, response.statusText);
         toast({
           title: "Login failed",
@@ -67,9 +75,9 @@ const LoginForm = () => {
         });
       }
     } catch (error: unknown) {
-      console.error("Signup error:", error);
+      console.error("Login error:", error);
       toast({
-        title: "Signup failed",
+        title: "Login failed",
         description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });

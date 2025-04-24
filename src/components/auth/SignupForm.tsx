@@ -58,18 +58,28 @@ const SignupForm = () => {
         body: JSON.stringify(data),
       });
 
-      console.log("Raw response:", await response.text().catch(e => `Error reading response: ${e}`));
+      const responseText = await response.text();
+      console.log("Raw response:", responseText);
 
-      // If registration was successful, proceed even if JSON parsing fails
       if (response.ok) {
-        console.log("Registration successful");
-        toast({
-          title: "Account created!",
-          description: "Welcome to Farm Management System. You are registered as a farmer.",
-        });
-        setShowTypeSelection(true);
+        // Extract token from response
+        const tokenMatch = responseText.match(/Token: (.+)$/);
+        if (tokenMatch && tokenMatch[1]) {
+          const token = tokenMatch[1];
+          // Store token in localStorage
+          localStorage.setItem("token", token);
+          
+          console.log("Registration successful");
+          toast({
+            title: "Account created!",
+            description: "Welcome to Farm Management System. You are registered as a farmer.",
+          });
+          setShowTypeSelection(true);
+        } else {
+          throw new Error("Token not found in response");
+        }
       } else {
-        const errorMessage = "Registration failed. Please try again.";
+        const errorMessage = responseText || "Registration failed. Please try again.";
         console.error("Registration failed:", response.status, response.statusText);
         toast({
           title: "Signup failed",

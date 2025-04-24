@@ -1,9 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import FarmerDashboard from "./pages/FarmerDashboard";
@@ -40,21 +40,21 @@ const App = () => (
           <Route path="/marketplace" element={<Marketplace />} />
           
           {/* Farmer routes */}
-          <Route path="/farmer" element={<Layout><FarmerDashboard /></Layout>} />
-          <Route path="/farmer/crops" element={<Layout><FarmerCrops /></Layout>} />
-          <Route path="/farmer/livestock" element={<Layout><FarmerLivestock /></Layout>} />
-          <Route path="/farmer/weather" element={<Layout><FarmerWeather /></Layout>} />
-          <Route path="/farmer/financials" element={<Layout><FarmerFinancials /></Layout>} />
-          <Route path="/farmer/products" element={<Layout><FarmerProducts /></Layout>} />
-          <Route path="/farmer/settings" element={<Layout><FarmerSettings /></Layout>} />
+          <Route path="/farmer" element={<ProtectedRoute><Layout><FarmerDashboard /></Layout></ProtectedRoute>} />
+          <Route path="/farmer/crops" element={<ProtectedRoute><Layout><FarmerCrops /></Layout></ProtectedRoute>} />
+          <Route path="/farmer/livestock" element={<ProtectedRoute><Layout><FarmerLivestock /></Layout></ProtectedRoute>} />
+          <Route path="/farmer/weather" element={<ProtectedRoute><Layout><FarmerWeather /></Layout></ProtectedRoute>} />
+          <Route path="/farmer/financials" element={<ProtectedRoute><Layout><FarmerFinancials /></Layout></ProtectedRoute>} />
+          <Route path="/farmer/products" element={<ProtectedRoute><Layout><FarmerProducts /></Layout></ProtectedRoute>} />
+          <Route path="/farmer/settings" element={<ProtectedRoute><Layout><FarmerSettings /></Layout></ProtectedRoute>} />
           
           {/* Admin routes */}
-          <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
-          <Route path="/admin/farmers" element={<Layout><AdminFarmers /></Layout>} />
-          <Route path="/admin/production" element={<Layout><AdminProduction /></Layout>} />
-          <Route path="/admin/finance" element={<Layout><AdminRevenue /></Layout>} />
-          <Route path="/admin/crops" element={<Layout><AdminCrops /></Layout>} />
-          <Route path="/admin/settings" element={<Layout><AdminSettings /></Layout>} />
+          <Route path="/admin" element={<ProtectedRoute><Layout><AdminDashboard /></Layout></ProtectedRoute>} />
+          <Route path="/admin/farmers" element={<ProtectedRoute><Layout><AdminFarmers /></Layout></ProtectedRoute>} />
+          <Route path="/admin/production" element={<ProtectedRoute><Layout><AdminProduction /></Layout></ProtectedRoute>} />
+          <Route path="/admin/finance" element={<ProtectedRoute><Layout><AdminRevenue /></Layout></ProtectedRoute>} />
+          <Route path="/admin/crops" element={<ProtectedRoute><Layout><AdminCrops /></Layout></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute><Layout><AdminSettings /></Layout></ProtectedRoute>} />
 
           {/* Redirects for any mismatched paths */}
           <Route path="/farmer/finance" element={<Navigate to="/farmer/financials" replace />} />

@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FinancialSummary from "@/components/farmer/FinancialSummary";
@@ -13,6 +12,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, CircleDollarSign, FileText, Plus, TrendingDown, TrendingUp } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useNavigate } from "react-router-dom";
+import { handleTokenExpiration } from "@/utils/auth";
 
 const transactionSchema = z.object({
   date: z.string(),
@@ -37,6 +38,20 @@ interface Transaction {
 
 const FarmerFinancials = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Authentication token not found",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+  }, [navigate, toast]);
   const [transactions, setTransactions] = useState<Transaction[]>([
     {
       id: 1,
@@ -93,24 +108,46 @@ const FarmerFinancials = () => {
     },
   });
 
-  const onSubmit = (data: TransactionFormValues) => {
-    const newTransaction: Transaction = {
-      id: transactions.length + 1,
-      date: data.date,
-      description: data.description,
-      amount: parseFloat(data.amount),
-      type: data.type,
-      category: data.category,
-    };
-    
-    setTransactions([...transactions, newTransaction]);
-    setIsDialogOpen(false);
-    form.reset();
-    
-    toast({
-      title: "Transaction added",
-      description: `${data.type === "income" ? "Income" : "Expense"} of $${data.amount} has been recorded.`,
-    });
+  const onSubmit = async (data: TransactionFormValues) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "Authentication token not found",
+          variant: "destructive",
+        });
+        navigate("/login");
+        return;
+      }
+
+      // Simulated API call - replace with actual API call
+      const newTransaction: Transaction = {
+        id: transactions.length + 1,
+        date: data.date,
+        description: data.description,
+        amount: parseFloat(data.amount),
+        type: data.type,
+        category: data.category,
+      };
+      
+      setTransactions([...transactions, newTransaction]);
+      setIsDialogOpen(false);
+      form.reset();
+      
+      toast({
+        title: "Transaction added",
+        description: `${data.type === "income" ? "Income" : "Expense"} of $${data.amount} has been recorded.`,
+      });
+    } catch (error) {
+      if (!handleTokenExpiration(error, navigate, toast)) {
+        toast({
+          title: "Error",
+          description: "Failed to add transaction",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const totalIncome = transactions

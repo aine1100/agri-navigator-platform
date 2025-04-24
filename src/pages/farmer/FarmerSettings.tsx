@@ -1,4 +1,3 @@
-
 import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -11,7 +10,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/use-toast";
-
+import { useNavigate } from "react-router-dom";
+import { handleTokenExpiration } from "@/utils/auth";
+import { useEffect } from "react";
+import { useToast } from "@/components/ui/use-toast";
 const profileFormSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
@@ -51,17 +53,53 @@ const defaultValues: Partial<ProfileFormValues> = {
 };
 
 const FarmerSettings = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Authentication token not found",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+  }, [navigate, toast]);
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues,
   });
 
-  function onSubmit(data: ProfileFormValues) {
-    toast({
-      title: "Settings Updated",
-      description: "Your profile settings have been saved successfully.",
-    });
-    console.log(data);
+  async function onSubmit(data: ProfileFormValues) {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "Authentication token not found",
+          variant: "destructive",
+        });
+        navigate("/login");
+        return;
+      }
+
+      // Add API call here
+      toast({
+        title: "Settings Updated",
+        description: "Your profile settings have been saved successfully.",
+      });
+    } catch (error) {
+      if (!handleTokenExpiration(error, navigate, toast)) {
+        toast({
+          title: "Error",
+          description: "Failed to update settings",
+          variant: "destructive",
+        });
+      }
+    }
   }
 
   return (
