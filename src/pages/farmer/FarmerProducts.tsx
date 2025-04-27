@@ -26,13 +26,15 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { handleTokenExpiration } from "@/utils/auth";
 
-// Updated Product type to match schema and API
+// Backend base URL for image fetching
+const BACKEND_BASE_URL = "http://localhost:8080";
+
+// Product type to match schema and API
 type Product = {
   id: string;
   name: string;
   description: string;
   price: number;
-  quantity: number;
   unit: string;
   category: string;
   ownerEmail?: string;
@@ -43,7 +45,6 @@ const productSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters"),
   category: z.string().min(1, "Please select a category"),
   price: z.coerce.number().min(0.01, "Price must be greater than 0"),
-  quantity: z.coerce.number().int().min(1, "Quantity must be at least 1"),
   unit: z.string().min(1, "Unit is required"),
   description: z.string().optional(),
   image: z.instanceof(File).optional(),
@@ -51,35 +52,12 @@ const productSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
-// Updated initial products to match schema
-const initialProducts: Product[] = [
-  {
-    id: "1",
-    name: "Organic Corn",
-    category: "Crops",
-    price: 3.99,
-    quantity: 50,
-    unit: "kg",
-    description: "Fresh organic corn harvested this season",
-    image: "/placeholder.svg",
-  },
-  {
-    id: "2",
-    name: "Fresh Eggs",
-    category: "Animal Products",
-    price: 4.5,
-    quantity: 30,
-    unit: "dozen",
-    description: "Free-range chicken eggs",
-    image: "/placeholder.svg",
-  },
-];
-
 const FarmerProducts = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [imageUrls, setImageUrls] = useState<{ [key: string]: string }>({}); // Store authenticated image URLs
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -87,7 +65,6 @@ const FarmerProducts = () => {
       name: "",
       category: "",
       price: 0,
-      quantity: 1,
       unit: "",
       description: "",
       image: undefined,
@@ -126,7 +103,43 @@ const FarmerProducts = () => {
       }
 
       const data = await response.json();
+      console.log("Fetched products:", data); // Log to inspect image URLs
       setProducts(data);
+
+      // Fetch images with Authorization header
+      const newImageUrls: { [key: string]: string } = {};
+      for (const product of data) {
+        if (product.image && product.image.startsWith("/uploads/")) {
+          try {
+            const imageResponse = await fetch(
+              `${BACKEND_BASE_URL}${product.image}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            if (imageResponse.ok) {
+              const blob = await imageResponse.blob();
+              newImageUrls[product.id] = URL.createObjectURL(blob);
+            } else {
+              console.error(
+                `Failed to fetch image for ${product.name}: ${imageResponse.status} ${imageResponse.statusText}`
+              );
+              newImageUrls[product.id] = "/placeholder.svg";
+            }
+          } catch (error) {
+            console.error(
+              `Error fetching image for ${product.name}: ${product.image}`,
+              error
+            );
+            newImageUrls[product.id] = "/placeholder.svg";
+          }
+        } else {
+          newImageUrls[product.id] = "/placeholder.svg";
+        }
+      }
+      setImageUrls(newImageUrls);
     } catch (error) {
       if (!handleTokenExpiration(error, navigate, toast)) {
         toast({
@@ -151,33 +164,41 @@ const FarmerProducts = () => {
         return;
       }
 
-      const formData = new FormData();
-      formData.append("name", data.name);
-      formData.append("description", data.description || "");
-      formData.append("price", data.price.toString());
-      formData.append("quantity", data.quantity.toString());
-      formData.append("unit", data.unit);
-      formData.append("category", data.category);
-
-      if (data.image instanceof File) {
-        formData.append("image", data.image);
+      if (!editingProductId && !data.image) {
+        toast({
+          title: "Error",
+          description: "Product image is required for new products",
+          variant: "destructive",
+        });
+        return;
       }
 
+      let response;
       if (editingProductId) {
-        // Update existing product
-        const response = await fetch(
+        // Update existing product (send JSON, as backend expects ProductDto)
+        const productData = {
+          proName: data.name,
+          proDesc: data.description || "",
+          proPrice: data.price,
+          proUnits: data.unit.toUpperCase(),
+          proCategory: data.category.toUpperCase(),
+        };
+
+        response = await fetch(
           `http://localhost:8080/api/products/${editingProductId}`,
           {
             method: "PUT",
             headers: {
               Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
             },
-            body: formData,
+            body: JSON.stringify(productData),
           }
         );
 
         if (!response.ok) {
-          throw new Error("Failed to update product");
+          const errorText = await response.text();
+          throw new Error(`Failed to update product: ${errorText}`);
         }
 
         toast({
@@ -186,8 +207,19 @@ const FarmerProducts = () => {
         });
         setEditingProductId(null);
       } else {
-        // Add new product
-        const response = await fetch("http://localhost:8080/api/products", {
+        // Add new product (send FormData)
+        const formData = new FormData();
+        formData.append("name", data.name);
+        formData.append("description", data.description || "");
+        formData.append("price", data.price.toString());
+        formData.append("unit", data.unit.toUpperCase()); // Convert to uppercase
+        formData.append("category", data.category.toUpperCase()); // Convert to uppercase
+        if (data.image instanceof File) {
+          formData.append("image", data.image);
+          console.log("Uploading image:", data.image.name); // Log image name
+        }
+
+        response = await fetch("http://localhost:8080/api/products/add", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -196,7 +228,8 @@ const FarmerProducts = () => {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to add product");
+          const errorText = await response.text();
+          throw new Error(`Failed to add product: ${errorText}`);
         }
 
         toast({
@@ -205,13 +238,14 @@ const FarmerProducts = () => {
         });
       }
 
-      fetchProducts();
+      await fetchProducts();
       form.reset();
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Submission error:", error);
       if (!handleTokenExpiration(error, navigate, toast)) {
         toast({
           title: "Error",
-          description: "Failed to save product",
+          description: error.message || "Failed to save product",
           variant: "destructive",
         });
       }
@@ -225,10 +259,9 @@ const FarmerProducts = () => {
         name: productToEdit.name,
         category: productToEdit.category,
         price: productToEdit.price,
-        quantity: productToEdit.quantity,
         unit: productToEdit.unit,
         description: productToEdit.description,
-        image: undefined, // File input can't be pre-filled for security reasons
+        image: undefined,
       });
       setEditingProductId(productId);
     }
@@ -309,7 +342,7 @@ const FarmerProducts = () => {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="name"
@@ -341,14 +374,14 @@ const FarmerProducts = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Crops">Crops</SelectItem>
-                          <SelectItem value="Vegetables">Vegetables</SelectItem>
-                          <SelectItem value="Fruits">Fruits</SelectItem>
-                          <SelectItem value="Animal Products">
+                          <SelectItem value="CROPS">Crops</SelectItem>
+                          <SelectItem value="VEGETABLES">Vegetables</SelectItem>
+                          <SelectItem value="FRUITS">Fruits</SelectItem>
+                          <SelectItem value="ANIMAL_PRODUCTS">
                             Animal Products
                           </SelectItem>
-                          <SelectItem value="Dairy">Dairy</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
+                          <SelectItem value="DAIRY">Dairy</SelectItem>
+                          <SelectItem value="OTHER">Other</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -376,26 +409,6 @@ const FarmerProducts = () => {
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="quantity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Quantity</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            step="1"
-                            placeholder="1"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
 
                 <FormField
@@ -415,12 +428,12 @@ const FarmerProducts = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="kg">Kilogram (kg)</SelectItem>
-                          <SelectItem value="g">Gram (g)</SelectItem>
-                          <SelectItem value="lb">Pound (lb)</SelectItem>
-                          <SelectItem value="unit">Unit</SelectItem>
-                          <SelectItem value="dozen">Dozen</SelectItem>
-                          <SelectItem value="liter">Liter</SelectItem>
+                          <SelectItem value="KILOGRAM">Kilogram (kg)</SelectItem>
+                          <SelectItem value="GRAM">Gram (g)</SelectItem>
+                          <SelectItem value="POUND">Pound (lb)</SelectItem>
+                          <SelectItem value="UNIT">Unit</SelectItem>
+                          <SelectItem value="DOZEN">Dozen</SelectItem>
+                          <SelectItem value="LITER">Liter</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -452,11 +465,11 @@ const FarmerProducts = () => {
                   name="image"
                   render={({ field: { value, onChange, ...field } }) => (
                     <FormItem>
-                      <FormLabel>Product Image</FormLabel>
+                      <FormLabel>Product Image {editingProductId ? "(Optional)" : "(Required)"}</FormLabel>
                       <FormControl>
                         <Input
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg,image/png,image/webp"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
@@ -482,13 +495,14 @@ const FarmerProducts = () => {
                     </Button>
                   )}
                   <Button
-                    type="submit"
+                    type="button"
                     className="bg-farm-forest hover:bg-farm-forest/90"
+                    onClick={form.handleSubmit(onSubmit)}
                   >
                     {editingProductId ? "Update Product" : "Add Product"}
                   </Button>
                 </div>
-              </form>
+              </div>
             </Form>
           </CardContent>
         </Card>
@@ -509,62 +523,70 @@ const FarmerProducts = () => {
             </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {products.map((product) => (
-                <Card key={product.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="h-16 w-16 rounded-md overflow-hidden bg-muted">
-                        <img
-                          src={product.image || "/placeholder.svg"}
-                          alt={product.name}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-medium line-clamp-1">
-                              {product.name}
-                            </h3>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Tags className="h-3 w-3" />
-                              <span>{product.category}</span>
+              {products.map((product) => {
+                const imageUrl = imageUrls[product.id] || "/placeholder.svg";
+                console.log(`Rendering image for ${product.name}: ${imageUrl}`);
+                return (
+                  <Card key={product.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="h-16 w-16 rounded-md overflow-hidden bg-muted">
+                          <img
+                            src={imageUrl}
+                            alt={product.name}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              console.error(
+                                `Failed to load image for ${product.name}: ${imageUrl}`
+                              );
+                              e.currentTarget.src = "/placeholder.svg";
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="font-medium line-clamp-1">
+                                {product.name}
+                              </h3>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Tags className="h-3 w-3" />
+                                <span>{product.category}</span>
+                              </div>
+                            </div>
+                            <div className="font-medium text-right">
+                              ${product.price.toFixed(2)}
                             </div>
                           </div>
-                          <div className="font-medium text-right">
-                            ${product.price.toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="flex justify-between items-end mt-2">
-                          <div className="text-sm">
-                            {product.quantity} {product.unit} available
-                          </div>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(product.id)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(product.id)}
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive/90"
-                            >
-                              <Trash className="h-4 w-4" />
-                              <span className="sr-only">Delete</span>
-                            </Button>
+                          <div className="flex justify-between items-end mt-2">
+                            <div className="text-sm">{product.unit}</div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(product.id)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span className="sr-only">Edit</span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(product.id)}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive/90"
+                              >
+                                <Trash className="h-4 w-4" />
+                                <span className="sr-only">Delete</span>
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
