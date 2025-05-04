@@ -1,15 +1,16 @@
-import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  Tractor, 
-  Leaf, 
-  Cloud, 
-  Wallet, 
-  User, 
-  Package,
-  LogOut
-} from "lucide-react";
-
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Package,
+  LogOut,
+  Leaf
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 import {
   Sidebar,
   SidebarHeader,
@@ -21,47 +22,30 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const FarmerSidebar = () => {
+const BuyerSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { state } = useSidebar();
+  const { toast } = useToast();
 
   const links = [
     {
       title: "Dashboard",
-      icon: Tractor,
-      href: "/farmer",
-      active: location.pathname === "/farmer",
+      icon: LayoutDashboard,
+      href: "/buyer/dashboard",
+      active: location.pathname === "/buyer/dashboard",
     },
     {
-      title: "Livestock",
-      icon: Leaf,
-      href: "/farmer/livestock",
-      active: location.pathname === "/farmer/livestock",
-    },
-    {
-      title: "Weather",
-      icon: Cloud,
-      href: "/farmer/weather",
-      active: location.pathname === "/farmer/weather",
-    },
-    {
-      title: "Financials",
-      icon: Wallet,
-      href: "/farmer/financials",
-      active: location.pathname === "/farmer/financials",
+      title: "Cart",
+      icon: ShoppingCart,
+      href: "/buyer/cart",
+      active: location.pathname === "/buyer/cart",
     },
     {
       title: "Orders",
       icon: Package,
-      href: "/farmer/orders",
-      active: location.pathname === "/farmer/orders",
-    },
-    {
-      title: "Settings",
-      icon: User,
-      href: "/farmer/settings",
-      active: location.pathname === "/farmer/settings",
+      href: "/buyer/orders",
+      active: location.pathname === "/buyer/orders",
     },
   ];
 
@@ -81,7 +65,11 @@ const FarmerSidebar = () => {
     } finally {
       localStorage.removeItem("token");
       sessionStorage.removeItem("token");
-      window.location.href = "/login";
+      toast({
+        title: "Success",
+        description: "Logged out successfully",
+      });
+      navigate("/login");
     }
   };
 
@@ -92,7 +80,7 @@ const FarmerSidebar = () => {
           <Leaf className="h-6 w-6 text-white" />
           <span className="font-bold text-lg text-white">Agri Navigator</span>
           <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full ml-2">
-            Farmer
+            Buyer
           </span>
         </div>
       </SidebarHeader>
@@ -130,4 +118,4 @@ const FarmerSidebar = () => {
   );
 };
 
-export default FarmerSidebar;
+export default BuyerSidebar; 

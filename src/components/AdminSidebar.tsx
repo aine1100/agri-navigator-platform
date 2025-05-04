@@ -1,82 +1,122 @@
+import { useNavigate, useLocation } from "react-router-dom";
+import { 
+  LayoutDashboard,
+  Users,
+  BarChart3,
+  DollarSign,
+  Sprout,
+  Settings,
+  LogOut
+} from "lucide-react";
 
-import { Home, Users, FileSpreadsheet, BarChart3, Settings, Leaf } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
+  SidebarContent,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuButton,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { Link } from "react-router-dom";
 
 const AdminSidebar = () => {
-  const menuItems = [
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { state } = useSidebar();
+
+  const links = [
     {
       title: "Dashboard",
-      icon: Home,
-      url: "/admin",
+      icon: LayoutDashboard,
+      href: "/admin",
+      active: location.pathname === "/admin",
     },
     {
-      title: "Manage Farmers",
+      title: "Farmers",
       icon: Users,
-      url: "/admin/farmers",
+      href: "/admin/farmers",
+      active: location.pathname === "/admin/farmers",
     },
     {
-      title: "Crop Data",
-      icon: Leaf,
-      url: "/admin/crops",
-    },
-    {
-      title: "Financial Analytics",
+      title: "Production",
       icon: BarChart3,
-      url: "/admin/finance",
+      href: "/admin/production",
+      active: location.pathname === "/admin/production",
     },
     {
-      title: "System Settings",
+      title: "Finance",
+      icon: DollarSign,
+      href: "/admin/finance",
+      active: location.pathname === "/admin/finance",
+    },
+    {
+      title: "Crops",
+      icon: Sprout,
+      href: "/admin/crops",
+      active: location.pathname === "/admin/crops",
+    },
+    {
+      title: "Settings",
       icon: Settings,
-      url: "/admin/settings",
+      href: "/admin/settings",
+      active: location.pathname === "/admin/settings",
     },
   ];
 
+  const handleLogout = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      if (token) {
+        await fetch("http://localhost:8080/api/auth/logout", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        });
+      }
+    } catch (e) {
+      // Optionally handle error
+    } finally {
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
+      window.location.href = "/login";
+    }
+  };
+
   return (
-    <Sidebar>
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
-          <Leaf className="h-6 w-6 text-sidebar-foreground" />
-          <span className="font-bold text-lg text-sidebar-foreground">Hinga</span>
-          <span className="text-xs bg-farm-green text-white px-2 py-0.5 rounded-full ml-2">
-            Admin
-          </span>
-        </div>
+    <Sidebar className="border-r border-border">
+      <SidebarHeader>
+        <h2 className="text-xl font-bold">Agri Navigator</h2>
+        <p className="text-sm text-muted-foreground">Admin Portal</p>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Admin Controls</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link to={item.url}>
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent className="flex flex-col justify-between h-full">
+        <nav className="grid gap-1 px-2">
+          <SidebarMenu>
+            {links.map((link, index) => (
+              <SidebarMenuItem key={index}>
+                <SidebarMenuButton
+                  isActive={link.active}
+                  onClick={() => navigate(link.href)}
+                  className={cn(
+                    "cursor-pointer",
+                    link.active && "text-primary bg-muted hover:bg-muted"
+                  )}
+                >
+                  <link.icon className="h-4 w-4 mr-2" />
+                  {link.title}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </nav>
       </SidebarContent>
       <SidebarFooter>
-        <div className="px-4 py-2 text-xs text-sidebar-foreground/70">
-          © 2025 Hinga Admin • v1.0
-        </div>
+        <SidebarMenuButton onClick={handleLogout}>
+          <LogOut className="h-4 w-4 mr-2" />
+          {state === "expanded" ? "Logout" : ""}
+        </SidebarMenuButton>
       </SidebarFooter>
     </Sidebar>
   );

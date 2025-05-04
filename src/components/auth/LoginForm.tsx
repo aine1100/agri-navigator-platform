@@ -8,18 +8,24 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import AuthLayout from "./AuthLayout";
-import UserTypeSelection from "./UserTypeSelection";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  role: z.enum(["FARMER", "BUYER"], { required_error: "Please select your role" }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [showTypeSelection, setShowTypeSelection] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -28,53 +34,60 @@ const LoginForm = () => {
     defaultValues: {
       email: "",
       password: "",
+      role: "FARMER",
     },
-    mode:"onChange"
+    mode: "onChange"
   });
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
-    
-    console.log("Attempting form submission with data:", data);
     try {
-      const response = await fetch("http://localhost:8080/api/auth/farmerLogin", {
+      const loginData = {
+        email: data.email,
+        password: data.password,
+        role: data.role,
+        firstName: null,
+        lastName: null,
+        phone: null,
+        address: null,
+        resetToken: null
+      };
+
+      const response = await fetch("http://localhost:8080/api/auth/v2/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(loginData),
       });
 
       const responseText = await response.text();
       console.log("Raw response:", responseText);
 
       if (response.ok) {
-        // Extract token from response
         const tokenMatch = responseText.match(/Token: (.+)$/);
         if (tokenMatch && tokenMatch[1]) {
           const token = tokenMatch[1];
-          // Store token in localStorage
           localStorage.setItem("token", token);
           
-          console.log("Login successful");
           toast({
             title: "Login successful!",
             description: "Welcome back to Farm Management System.",
           });
-          setShowTypeSelection(true);
+          
+          // Redirect based on role
+          if (data.role === "BUYER") {
+            navigate("/buyer");
+          } else {
+            navigate("/farmer");
+          }
         } else {
           throw new Error("Token not found in response");
         }
       } else {
-        const errorMessage = responseText || "Login failed. Please try again.";
-        console.error("Login failed:", response.status, response.statusText);
-        toast({
-          title: "Login failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
+        throw new Error(responseText || "Login failed");
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("Login error:", error);
       toast({
         title: "Login failed",
@@ -85,27 +98,6 @@ const LoginForm = () => {
       setIsLoading(false);
     }
   };
-
-  const handleUserTypeSelection = (type: "farmer" | "admin") => {
-    toast({
-      title: "Login successful",
-      description: `Welcome back to your ${type === "farmer" ? "farm" : "admin"} dashboard!`,
-    });
-    
-    if (type === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/farmer");
-    }
-  };
-
-  if (showTypeSelection) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-farm-wheat/30 to-background p-4">
-        <UserTypeSelection onSelect={handleUserTypeSelection} />
-      </div>
-    );
-  }
 
   return (
     <AuthLayout
@@ -148,7 +140,37 @@ const LoginForm = () => {
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full bg-farm-forest hover:bg-farm-forest/90" disabled={isLoading}>
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Role</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="FARMER">Farmer</SelectItem>
+                    <SelectItem value="BUYER">Buyer</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="text-right">
+            <Link to="/forgot-password" className="text-farm-forest hover:underline text-sm">
+              Forgot password?
+            </Link>
+          </div>
+          <Button 
+            type="submit" 
+            className="w-full bg-farm-forest hover:bg-farm-forest/90" 
+            disabled={isLoading}
+          >
             {isLoading ? "Signing in..." : "Sign in"}
           </Button>
         </form>

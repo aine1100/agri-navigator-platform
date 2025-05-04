@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CloudRain, Droplets, Sun, Wind, AlertTriangle, Thermometer, Umbrella, Info } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
-import { handleTokenExpiration } from "@/utils/auth";
 
 interface WeatherData {
   temperature: number;
@@ -33,19 +32,6 @@ interface WeatherAlert {
 const FarmerWeather = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast({
-        title: "Error",
-        description: "Authentication token not found",
-        variant: "destructive",
-      });
-      navigate("/login");
-      return;
-    }
-  }, [navigate, toast]);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());

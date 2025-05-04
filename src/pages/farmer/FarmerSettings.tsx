@@ -6,56 +6,53 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { handleTokenExpiration } from "@/utils/auth";
 import { useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { jwtDecode } from "jwt-decode";
+
 const profileFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
+  firstName: z.string().min(2, {
+    message: "First name must be at least 2 characters.",
+  }),
+  lastName: z.string().min(2, {
+    message: "Last name must be at least 2 characters.",
   }),
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
-  phone: z.string().min(10, {
+  phoneNumber: z.string().min(10, {
     message: "Phone number must be at least 10 digits.",
   }),
-  farmName: z.string().min(2, {
-    message: "Farm name must be at least 2 characters.",
-  }),
-  farmSize: z.string().min(1, {
-    message: "Farm size is required.",
-  }),
-  farmType: z.enum(["crops", "livestock", "mixed"], {
-    required_error: "Please select a farm type.",
-  }),
-  notifications: z.boolean().default(true),
-  weatherAlerts: z.boolean().default(true),
-  marketUpdates: z.boolean().default(false),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
-const defaultValues: Partial<ProfileFormValues> = {
-  name: "John Doe",
-  email: "john.doe@example.com",
-  phone: "1234567890",
-  farmName: "Green Valley Farm",
-  farmSize: "120",
-  farmType: "mixed",
-  notifications: true,
-  weatherAlerts: true,
-  marketUpdates: false,
-};
+interface FarmerToken {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  role: string;
+}
 
 const FarmerSettings = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phoneNumber: "",
+    },
+  });
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -67,11 +64,31 @@ const FarmerSettings = () => {
       navigate("/login");
       return;
     }
-  }, [navigate, toast]);
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileFormSchema),
-    defaultValues,
-  });
+
+    try {
+      const decodedToken = jwtDecode<FarmerToken>(token);
+      
+      // Update the form with the token data
+      form.reset({
+        firstName: decodedToken.firstName || "",
+        lastName: decodedToken.lastName || "",
+        email: decodedToken.email || "",
+        phoneNumber: decodedToken.phoneNumber || "",
+      });
+
+      toast({
+        title: "Success",
+        description: "Farmer data loaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to decode token",
+        variant: "destructive",
+      });
+      navigate("/login");
+    }
+  }, [form, navigate, toast]);
 
   async function onSubmit(data: ProfileFormValues) {
     try {
@@ -86,16 +103,17 @@ const FarmerSettings = () => {
         return;
       }
 
-      // Add API call here
+      // Here you would typically make an API call to update the farmer's data
+      // For now, we'll just show a success message
       toast({
-        title: "Settings Updated",
-        description: "Your profile settings have been saved successfully.",
+        title: "Success",
+        description: "Profile updated successfully",
       });
     } catch (error) {
       if (!handleTokenExpiration(error, navigate, toast)) {
         toast({
           title: "Error",
-          description: "Failed to update settings",
+          description: "Failed to update profile",
           variant: "destructive",
         });
       }
@@ -114,28 +132,44 @@ const FarmerSettings = () => {
       <div className="space-y-8">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            {/* Personal Information Card */}
             <Card>
               <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
+                <CardTitle>Personal Information</CardTitle>
                 <CardDescription>
-                  Update your personal and farm details.
+                  Update your personal details.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="name"
+                    name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name</FormLabel>
+                        <FormLabel>First Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Your full name" {...field} />
+                          <Input placeholder="Your first name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Your last name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="email"
@@ -149,166 +183,20 @@ const FarmerSettings = () => {
                       </FormItem>
                     )}
                   />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Your phone number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Separator className="my-4" />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="farmName"
+                    name="phoneNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Farm Name</FormLabel>
+                        <FormLabel>Phone Number</FormLabel>
                         <FormControl>
-                          <Input placeholder="Your farm name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="farmSize"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Farm Size (acres)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="Farm size in acres" {...field} />
+                          <Input placeholder="Your phone number" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="farmType"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Farm Type</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-1"
-                        >
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="crops" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Crops Only</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="livestock" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Livestock Only</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="mixed" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Mixed Farming</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>
-                  Manage your notification settings.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="notifications"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Enable Notifications
-                        </FormLabel>
-                        <FormDescription>
-                          Receive notifications about your farm activities.
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="weatherAlerts"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Weather Alerts
-                        </FormLabel>
-                        <FormDescription>
-                          Get alerts for extreme weather conditions.
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="marketUpdates"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Market Updates
-                        </FormLabel>
-                        <FormDescription>
-                          Receive updates about market prices for your products.
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
               </CardContent>
               <CardFooter>
                 <Button type="submit">Save Changes</Button>

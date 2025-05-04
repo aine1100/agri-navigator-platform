@@ -1,40 +1,10 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import FinancialSummary from "@/components/farmer/FinancialSummary";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, CircleDollarSign, FileText, Plus, TrendingDown, TrendingUp } from "lucide-react";
+import { CircleDollarSign, TrendingDown, TrendingUp } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { handleTokenExpiration } from "@/utils/auth";
-
-const transactionSchema = z.object({
-  date: z.string(),
-  description: z.string().min(3, { message: "Description must be at least 3 characters" }),
-  amount: z.string().refine(val => !isNaN(parseFloat(val)), { 
-    message: "Amount must be a number" 
-  }),
-  type: z.enum(["income", "expense"]),
-  category: z.string(),
-});
-
-type TransactionFormValues = z.infer<typeof transactionSchema>;
-
-interface Transaction {
-  id: number;
-  date: string;
-  description: string;
-  amount: number;
-  type: "income" | "expense";
-  category: string;
-}
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const FarmerFinancials = () => {
   const { toast } = useToast();
@@ -52,214 +22,30 @@ const FarmerFinancials = () => {
       return;
     }
   }, [navigate, toast]);
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    {
-      id: 1,
-      date: "2023-06-01",
-      description: "Crop sale - Wheat",
-      amount: 4500,
-      type: "income",
-      category: "Sales"
-    },
-    {
-      id: 2,
-      date: "2023-06-05",
-      description: "Fertilizer purchase",
-      amount: 1200,
-      type: "expense",
-      category: "Supplies"
-    },
-    {
-      id: 3,
-      date: "2023-06-10",
-      description: "Equipment repair",
-      amount: 350,
-      type: "expense",
-      category: "Maintenance"
-    },
-    {
-      id: 4,
-      date: "2023-06-15",
-      description: "Livestock sale - Cattle",
-      amount: 3800,
-      type: "income",
-      category: "Sales"
-    },
-    {
-      id: 5,
-      date: "2023-06-20",
-      description: "Seed purchase",
-      amount: 850,
-      type: "expense",
-      category: "Supplies"
-    }
-  ]);
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // Sample data for the sales trend graph
+  const salesData = [
+    { date: '2024-01', sales: 4500 },
+    { date: '2024-02', sales: 5200 },
+    { date: '2024-03', sales: 4800 },
+    { date: '2024-04', sales: 6100 },
+    { date: '2024-05', sales: 5500 },
+    { date: '2024-06', sales: 7200 },
+  ];
 
-  const form = useForm<TransactionFormValues>({
-    resolver: zodResolver(transactionSchema),
-    defaultValues: {
-      date: new Date().toISOString().split('T')[0],
-      description: "",
-      amount: "",
-      type: "income",
-      category: "",
-    },
-  });
-
-  const onSubmit = async (data: TransactionFormValues) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast({
-          title: "Error",
-          description: "Authentication token not found",
-          variant: "destructive",
-        });
-        navigate("/login");
-        return;
-      }
-
-      // Simulated API call - replace with actual API call
-      const newTransaction: Transaction = {
-        id: transactions.length + 1,
-        date: data.date,
-        description: data.description,
-        amount: parseFloat(data.amount),
-        type: data.type,
-        category: data.category,
-      };
-      
-      setTransactions([...transactions, newTransaction]);
-      setIsDialogOpen(false);
-      form.reset();
-      
-      toast({
-        title: "Transaction added",
-        description: `${data.type === "income" ? "Income" : "Expense"} of $${data.amount} has been recorded.`,
-      });
-    } catch (error) {
-      if (!handleTokenExpiration(error, navigate, toast)) {
-        toast({
-          title: "Error",
-          description: "Failed to add transaction",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const totalIncome = transactions
-    .filter(t => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
-    
-  const totalExpenses = transactions
-    .filter(t => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
-    
+  const totalIncome = 27300; // Sum of sales data
+  const totalExpenses = 15000; // Example fixed value
   const netIncome = totalIncome - totalExpenses;
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Financial Management</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Transaction
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Transaction</DialogTitle>
-              <DialogDescription>
-                Record a new income or expense.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Crop sale, Equipment purchase" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Amount ($)</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="income">Income</SelectItem>
-                          <SelectItem value="expense">Expense</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Sales, Supplies, Maintenance" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button type="submit">Add Transaction</Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Financial Overview</h1>
+          <p className="text-muted-foreground">
+            Track your farm's financial performance
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -299,111 +85,58 @@ const FarmerFinancials = () => {
         </Card>
       </div>
 
-      <FinancialSummary />
-
+      {/* Sales Trend Graph */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
-          <CardDescription>View and manage your financial transactions</CardDescription>
+          <CardTitle>Sales Trend</CardTitle>
+          <CardDescription>Monthly sales performance over time</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all">
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="income">Income</TabsTrigger>
-              <TabsTrigger value="expense">Expenses</TabsTrigger>
-            </TabsList>
-            <TabsContent value="all" className="mt-4">
-              <div className="space-y-2">
-                {transactions
-                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                  .map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-md">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${
-                          transaction.type === 'income' ? 'bg-farm-green/10' : 'bg-destructive/10'
-                        }`}>
-                          {transaction.type === 'income' ? 
-                            <TrendingUp className={`h-4 w-4 text-farm-green`} /> : 
-                            <TrendingDown className={`h-4 w-4 text-destructive`} />
-                          }
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{transaction.description}</p>
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3 mr-1" /> {new Date(transaction.date).toLocaleDateString()}
-                            <span className="mx-2">•</span>
-                            <FileText className="h-3 w-3 mr-1" /> {transaction.category}
-                          </div>
-                        </div>
-                      </div>
-                      <span className={`font-semibold ${
-                        transaction.type === 'income' ? 'text-farm-green' : 'text-destructive'
-                      }`}>
-                        {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toLocaleString()}
-                      </span>
-                    </div>
-                  ))
-                }
-              </div>
-            </TabsContent>
-            <TabsContent value="income" className="mt-4">
-              <div className="space-y-2">
-                {transactions
-                  .filter(t => t.type === 'income')
-                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                  .map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-md">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-full bg-farm-green/10">
-                          <TrendingUp className="h-4 w-4 text-farm-green" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{transaction.description}</p>
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3 mr-1" /> {new Date(transaction.date).toLocaleDateString()}
-                            <span className="mx-2">•</span>
-                            <FileText className="h-3 w-3 mr-1" /> {transaction.category}
-                          </div>
-                        </div>
-                      </div>
-                      <span className="font-semibold text-farm-green">
-                        +${transaction.amount.toLocaleString()}
-                      </span>
-                    </div>
-                  ))
-                }
-              </div>
-            </TabsContent>
-            <TabsContent value="expense" className="mt-4">
-              <div className="space-y-2">
-                {transactions
-                  .filter(t => t.type === 'expense')
-                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                  .map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-md">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-full bg-destructive/10">
-                          <TrendingDown className="h-4 w-4 text-destructive" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{transaction.description}</p>
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3 mr-1" /> {new Date(transaction.date).toLocaleDateString()}
-                            <span className="mx-2">•</span>
-                            <FileText className="h-3 w-3 mr-1" /> {transaction.category}
-                          </div>
-                        </div>
-                      </div>
-                      <span className="font-semibold text-destructive">
-                        -${transaction.amount.toLocaleString()}
-                      </span>
-                    </div>
-                  ))
-                }
-              </div>
-            </TabsContent>
-          </Tabs>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={salesData}
+                margin={{
+                  top: 10,
+                  right: 30,
+                  left: 0,
+                  bottom: 0,
+                }}
+              >
+                <defs>
+                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#4ade80" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#4ade80" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date" 
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                  }}
+                />
+                <YAxis 
+                  tickFormatter={(value) => `$${value.toLocaleString()}`}
+                />
+                <Tooltip 
+                  formatter={(value) => [`$${value.toLocaleString()}`, 'Sales']}
+                  labelFormatter={(label) => {
+                    const date = new Date(label);
+                    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="sales"
+                  stroke="#4ade80"
+                  fillOpacity={1}
+                  fill="url(#colorSales)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
     </div>

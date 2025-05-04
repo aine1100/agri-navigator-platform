@@ -88,7 +88,7 @@ const Marketplace = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch(`${BACKEND_BASE_URL}/api/products`);
+        const response = await fetch(`${BACKEND_BASE_URL}/api/products/all`);
         if (!response.ok) {
           throw new Error(`Failed to fetch products: ${response.status} ${response.statusText}`);
         }
@@ -104,8 +104,8 @@ const Marketplace = () => {
           unit: product.unit,
           description: product.description || "",
           image: product.image,
-          ownerEmail: product.ownerEmail,
-          farmerName: product.ownerEmail,
+          ownerEmail: product.owner_email,
+          farmerName: product.owner_email,
           farmId: "1",
           location: "Rwanda",
           quantity: 100,
@@ -114,16 +114,12 @@ const Marketplace = () => {
         setProducts(mappedProducts);
 
         // Fetch images with Authorization header
-        const token = localStorage.getItem("token");
         const newImageUrls: { [key: string]: string } = {};
         for (const product of mappedProducts) {
           if (product.image && product.image.startsWith("/uploads/")) {
             try {
               const imageResponse = await fetch(
-                `${BACKEND_BASE_URL}${product.image}`,
-                {
-                  headers: token ? { Authorization: `Bearer ${token}` } : {},
-                }
+                `${BACKEND_BASE_URL}${product.image}`
               );
               if (imageResponse.ok) {
                 const blob = await imageResponse.blob();
