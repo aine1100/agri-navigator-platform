@@ -19,7 +19,6 @@ import {
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  role: z.enum(["FARMER", "BUYER"], { required_error: "Please select your role" }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -34,7 +33,6 @@ const LoginForm = () => {
     defaultValues: {
       email: "",
       password: "",
-      role: "FARMER",
     },
     mode: "onChange"
   });
@@ -45,7 +43,6 @@ const LoginForm = () => {
       const loginData = {
         email: data.email,
         password: data.password,
-        role: data.role,
         firstName: null,
         lastName: null,
         phone: null,
@@ -61,30 +58,48 @@ const LoginForm = () => {
         body: JSON.stringify(loginData),
       });
 
-      const responseText = await response.text();
-      console.log("Raw response:", responseText);
-
       if (response.ok) {
-        const tokenMatch = responseText.match(/Token: (.+)$/);
-        if (tokenMatch && tokenMatch[1]) {
-          const token = tokenMatch[1];
-          localStorage.setItem("token", token);
-          
-          toast({
-            title: "Login successful!",
-            description: "Welcome back to Farm Management System.",
-          });
-          
-          // Redirect based on role
-          if (data.role === "BUYER") {
-            navigate("/buyer");
-          } else {
-            navigate("/farmer");
-          }
-        } else {
-          throw new Error("Token not found in response");
+        let userRole = null;
+        let token = null;
+        let json = null;
+        try {
+          json = await response.json();
+          userRole = json.role;
+          token = json.token;
+        } catch {
+          // fallback to old method if needed
         }
+
+        if (!userRole && token) {
+          try {
+            const decoded: any = require("jwt-decode").jwtDecode(token);
+            const role = decoded.role || decoded.userRole || decoded.authorities || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+            userRole = Array.isArray(role) ? role[0] : role;
+            if (typeof userRole === 'object' && userRole !== null) {
+              userRole = userRole.authority || userRole.role || Object.values(userRole)[0];
+            }
+          } catch {}
+        }
+
+        if (token) {
+          localStorage.setItem("token", token);
+        }
+
+        if (userRole === "BUYER") {
+          navigate("/buyer");
+        } else if (userRole === "FARMER") {
+          navigate("/farmer");
+        } else if (userRole === "ADMIN") {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
+        toast({
+          title: "Login successful!",
+          description: "Welcome back to Farm Management System.",
+        });
       } else {
+        const responseText = await response.text();
         throw new Error(responseText || "Login failed");
       }
     } catch (error) {
@@ -140,29 +155,8 @@ const LoginForm = () => {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Role</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="FARMER">Farmer</SelectItem>
-                    <SelectItem value="BUYER">Buyer</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <div className="text-right">
-            <Link to="/forgot-password" className="text-farm-forest hover:underline text-sm">
+            <Link to="/reset-password" className="text-farm-forest hover:underline text-sm">
               Forgot password?
             </Link>
           </div>

@@ -11,11 +11,12 @@ interface CartItem {
   id: number;
   livestock: {
     livestockId: number;
-    name: string;
+    type: string;
     description: string;
     price: number;
     quantity: number;
-    imageUrl: string;
+    imageUrls: string;
+    breed: string;
   };
   quantity: number;
   unitPrice: number;
@@ -27,6 +28,7 @@ const Cart = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
 
   useEffect(() => {
     fetchCartItems();
@@ -40,7 +42,7 @@ const Cart = () => {
         return;
       }
       console.log(token)
-      const decoded = jwtDecode(token);
+      const decoded = jwtDecode<any>(token);
       const response = await fetch(`http://localhost:8080/api/cart`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -48,7 +50,7 @@ const Cart = () => {
       });
       if (!response.ok) throw new Error("Failed to fetch cart items");
       const data = await response.json();
-      setCartItems(data);
+      setCartItems(data.sort((a, b) => a.id - b.id));
       console.log(data)
     } catch (error) {
       toast({
@@ -82,6 +84,11 @@ const Cart = () => {
 
       if (!response.ok) throw new Error("Failed to update cart");
       
+      setCartItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === cartId ? { ...item, quantity: newQuantity, totalPrice: newQuantity * item.unitPrice } : item
+        )
+      );
       fetchCartItems();
     } catch (error) {
       toast({
@@ -99,9 +106,8 @@ const Cart = () => {
         navigate("/login");
         return;
       }
-      const decoded = jwtDecode(token);
-      
-      const response = await fetch(`http://localhost:8080/api/cart/${cartId}/${decoded.id}`, {
+
+      const response = await fetch(`http://localhost:8080/api/cart/${cartId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -109,12 +115,12 @@ const Cart = () => {
       });
 
       if (!response.ok) throw new Error("Failed to remove item");
-      
+
       toast({
         title: "Success",
         description: "Item removed from cart",
       });
-      
+
       fetchCartItems();
     } catch (error) {
       toast({
@@ -132,7 +138,7 @@ const Cart = () => {
         navigate("/login");
         return;
       }
-      const decoded = jwtDecode(token);
+      const decoded = jwtDecode<any>(token);
       
       const response = await fetch(`http://localhost:8080/api/cart/clear/${decoded.id}`, {
         method: "DELETE",
@@ -197,11 +203,13 @@ const Cart = () => {
                     <div className="w-24 h-24 relative">
                       <img
                         src={
-                          item.imageUrls?.startsWith('http')
-                            ? item.imageUrls
-                            : `http://localhost:8080${item.imageUrls || '/placeholder.svg'}`
+                          item.livestock?.imageUrls
+                            ? (item.livestock.imageUrls.startsWith('http')
+                                ? item.livestock.imageUrls
+                                : `http://localhost:8080${item.livestock.imageUrls}`)
+                            : '/placeholder.svg'
                         }
-                        alt={item.type}
+                        alt={item.livestock?.type || 'Unknown Livestock'}
                         className="object-cover rounded-md w-full h-full"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -210,16 +218,18 @@ const Cart = () => {
                       />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold">{item.type}</h3>
-                      <p className="text-sm text-gray-500 mb-2">
-                        {item.description}
-                      </p>
+                      <h3 className="font-semibold">{item.livestock?.type || 'Unknown'}</h3>
+                      <p className="text-sm text-gray-500 mb-2">{item.livestock?.description || 'No description available.'}</p>
+                      <div className="text-xs text-gray-400 mb-2">
+                        Breed: {item.livestock?.breed || 'N/A'} | Price: ${item.livestock?.price ?? 'N/A'} | In Stock: {item.livestock?.quantity ?? 'N/A'}
+                      </div>
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
                             size="icon"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            disabled={item.quantity <= 1 || !item.livestock}
                           >
                             <Minus className="h-4 w-4" />
                           </Button>
@@ -227,15 +237,24 @@ const Cart = () => {
                           <Button
                             variant="outline"
                             size="icon"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => {
+                              if (item.quantity >= (item.livestock?.quantity ?? 0)) {
+                                toast({
+                                  title: "Stock limit reached",
+                                  description: "You cannot add more than available stock.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              updateQuantity(item.id, item.quantity + 1);
+                            }}
+                            disabled={!item.livestock || item.quantity >= (item.livestock.quantity ?? 0)}
                           >
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className="font-semibold">
-                            ${item.totalPrice}
-                          </span>
+                          <span className="font-semibold">${item.totalPrice}</span>
                           <Button
                             variant="ghost"
                             size="icon"

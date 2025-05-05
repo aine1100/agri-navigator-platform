@@ -39,12 +39,7 @@ const FarmerSidebar = () => {
       href: "/farmer/livestock",
       active: location.pathname === "/farmer/livestock",
     },
-    {
-      title: "Weather",
-      icon: Cloud,
-      href: "/farmer/weather",
-      active: location.pathname === "/farmer/weather",
-    },
+ 
     {
       title: "Financials",
       icon: Wallet,

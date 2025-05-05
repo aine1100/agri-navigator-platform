@@ -82,11 +82,7 @@ const FarmerOrders = () => {
       setOrders(data);
     } catch (error) {
       if (!handleTokenExpiration(error, navigate, toast)) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch orders",
-          variant: "destructive",
-        });
+       console.log("Failed to fetch orders")
       }
     } finally {
       setIsLoading(false);

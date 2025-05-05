@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,6 +40,8 @@ const Checkout = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const cartId = searchParams.get("cartId");
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutFormSchema),
@@ -63,15 +65,21 @@ const Checkout = () => {
         navigate("/login");
         return;
       }
-      const decoded = jwtDecode(token);
-      const response = await fetch(`http://localhost:8080/api/cart/user/${decoded.id}`, {
+      let url = cartId
+        ? `http://localhost:8080/api/cart/${cartId}`
+        : `http://localhost:8080/api/cart`;
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       if (!response.ok) throw new Error("Failed to fetch cart items");
       const data = await response.json();
-      setCartItems(data);
+      if (cartId) {
+        setCartItems([data]);
+      } else {
+        setCartItems(data);
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -90,9 +98,23 @@ const Checkout = () => {
         navigate("/login");
         return;
       }
-
-      // Create order for each cart item
-      for (const item of cartItems) {
+      // Only create order for the selected cart item if cartId is present
+      const itemsToOrder = cartId ? cartItems.filter(item => item.id === Number(cartId)) : cartItems;
+      if (!itemsToOrder.length) {
+        toast({ title: "Error", description: "No cart item selected.", variant: "destructive" });
+        return;
+      }
+      for (const item of itemsToOrder) {
+        console.log({
+          cart: { id: item.id },
+          deliveryAddress: {
+            province: data.province,
+            district: data.district,
+            sector: data.sector,
+            cell: data.cell,
+            village: data.village,
+          },
+        });
         const response = await fetch("http://localhost:8080/api/orders/create-from-cart", {
           method: "POST",
           headers: {
@@ -110,20 +132,17 @@ const Checkout = () => {
             },
           }),
         });
-
         if (!response.ok) throw new Error("Failed to create order");
       }
-
       toast({
         title: "Success",
-        description: "Orders placed successfully",
+        description: "Order placed successfully",
       });
-
       navigate("/buyer/orders");
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to place orders",
+        description: "Failed to place order",
         variant: "destructive",
       });
     }

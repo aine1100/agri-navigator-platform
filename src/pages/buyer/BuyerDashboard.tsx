@@ -78,6 +78,7 @@ const BuyerDashboard = () => {
 
       const data = await response.json();
       setLivestock(data);
+      console.log(data)
       // Initialize quantities to 1 for each livestock item
       const initialQuantities = data.reduce((acc: { [key: number]: number }, item: Livestock) => {
         acc[item.livestockId] = 1;
@@ -103,7 +104,7 @@ const BuyerDashboard = () => {
         return;
       }
       const decoded = jwtDecode<JwtPayload>(token);
-      const response = await fetch(`http://localhost:8080/api/cart/user/${decoded.id}`, {
+      const response = await fetch(`http://localhost:8080/api/cart`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -206,6 +207,7 @@ const BuyerDashboard = () => {
       });
     }
   };
+  
 
   const updateCartQuantity = async (cartId: number, newQuantity: number) => {
     try {
@@ -265,6 +267,7 @@ const BuyerDashboard = () => {
     item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (item.farmer && `${item.farmer.firstName} ${item.farmer.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+  
 
   return (
     <div className="container mx-auto py-8">
@@ -297,119 +300,106 @@ const BuyerDashboard = () => {
       {loading ? (
         <div className="text-center">Loading...</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredLivestock.map((item) => (
-            <Card key={item.livestockId} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-start">
-                  <span>{item.type}</span>
-                  <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                    {item.status}
-                  </span>
-                </CardTitle>
-                <CardDescription>
-                  Breed: {item.breed}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="aspect-video relative mb-4">
-                  <img
-                    src={item.imageUrls.startsWith('http') ? item.imageUrls : `http://localhost:8080${item.imageUrls}`}
-                    alt={item.type}
-                    className="object-cover rounded-md w-full h-full"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/placeholder-livestock.jpg';
-                    }}
-                  />
-                </div>
-                <p className="text-sm text-gray-500 mb-4">{item.description}</p>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <Scale className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">{item.weight} kg</span>
+        livestock.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <h2 className="text-2xl font-semibold mb-2">No livestock on market yet</h2>
+            <p className="text-gray-500 mb-4">Please check back later for available livestock.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredLivestock.map((item) => (
+              <Card key={item.livestockId} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="flex justify-between items-start">
+                    <span>{item.type}</span>
+                    <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                      {item.status}
+                    </span>
+                  </CardTitle>
+                  <CardDescription>
+                    Breed: {item.breed}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="aspect-video relative mb-4">
+                    <img
+                      src={item.imageUrls.startsWith('http') ? item.imageUrls : `http://localhost:8080${item.imageUrls}`}
+                      alt={item.type}
+                      className="object-cover rounded-md w-full h-full"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/placeholder-livestock.jpg';
+                      }}
+                    />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">{new Date(item.birthDate).toLocaleDateString()}</span>
+                  <p className="text-sm text-gray-500 mb-4">{item.description}</p>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <Scale className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">{item.weight} kg</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">{new Date(item.birthDate).toLocaleDateString()}</span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-semibold">${item.price}</span>
-                  <span className="text-sm text-gray-500">
-                    Available: {item.quantity}
-                  </span>
-                </div>
-                {item.farmer && (
-                  <div className="mt-2 text-sm text-gray-500 mb-4">
-                    Seller: {item.farmer.firstName} {item.farmer.lastName}
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-lg font-semibold">${item.price}</span>
+                    <span className="text-sm text-gray-500">
+                      Available: {item.quantity}
+                    </span>
                   </div>
-                )}
-                <div className="flex items-center gap-2 mb-4">
+                  {item.farmer && (
+                    <div className="mt-2 text-sm text-gray-500 mb-4">
+                      Seller: {item.farmer.firstName} {item.farmer.lastName}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 mb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => decrementQuantity(item.livestockId)}
+                      disabled={quantities[item.livestockId] <= 1}
+                    >
+                      -
+                    </Button>
+                    <Input
+                      type="number"
+                      value={quantities[item.livestockId] || 1}
+                      onChange={(e) => handleQuantityChange(item.livestockId, e.target.value)}
+                      className="w-16 text-center"
+                      min="1"
+                      max={item.quantity}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => incrementQuantity(item.livestockId, item.quantity)}
+                      disabled={quantities[item.livestockId] >= item.quantity}
+                    >
+                      +
+                    </Button>
+                  </div>
+                  <div className="text-sm text-gray-500 mb-4">
+                    Remaining in stock: {Math.max(0, item.quantity - (quantities[item.livestockId] || 1))}
+                  </div>
+                </CardContent>
+                <CardFooter>
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => decrementQuantity(item.livestockId)}
-                    disabled={quantities[item.livestockId] <= 1}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    onClick={() => addToCart(item)}
+                    disabled={item.quantity === 0 || quantities[item.livestockId] > item.quantity}
                   >
-                    -
+                    Add to Cart
                   </Button>
-                  <Input
-                    type="number"
-                    value={quantities[item.livestockId] || 1}
-                    onChange={(e) => handleQuantityChange(item.livestockId, e.target.value)}
-                    className="w-16 text-center"
-                    min="1"
-                    max={item.quantity}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => incrementQuantity(item.livestockId, item.quantity)}
-                    disabled={quantities[item.livestockId] >= item.quantity}
-                  >
-                    +
-                  </Button>
-                </div>
-                <div className="text-sm text-gray-500 mb-4">
-                  Remaining in stock: {Math.max(0, item.quantity - (quantities[item.livestockId] || 1))}
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  onClick={() => addToCart(item)}
-                  disabled={item.quantity === 0 || quantities[item.livestockId] > item.quantity}
-                >
-                  Add to Cart
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )
       )}
 
-      {cartItems.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-lg">
-          <div className="container mx-auto flex justify-between items-center">
-            <div>
-              <p className="font-semibold">
-                Total Items: {cartItems.length}
-              </p>
-              <p className="text-sm text-gray-500">
-                Total: $
-                {cartItems.reduce((sum, item) => sum + item.totalPrice, 0)}
-              </p>
-            </div>
-            <Button
-              onClick={() => navigate("/buyer/checkout")}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              Proceed to Checkout
-            </Button>
-          </div>
-        </div>
-      )}
+     
     </div>
   );
 };

@@ -26,7 +26,8 @@ import BuyerDashboard from "./pages/buyer/BuyerDashboard";
 import Cart from "./pages/buyer/Cart";
 import Checkout from "./pages/buyer/Checkout";
 import Orders from "./pages/buyer/Orders";
-
+import RequestResetPassword from "./components/auth/forgotPassword";
+import ConfirmResetPassword from "./components/auth/confirmResetPassword";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -66,6 +67,10 @@ const App = () => (
 
         {/* Redirects for any mismatched paths */}
         <Route path="/farmer/finance" element={<Navigate to="/farmer/financials" replace />} />
+        
+        {/* Reset Password routes */}
+        <Route path="/reset-password" element={<RequestResetPassword />} />
+        <Route path="/reset-password/confirm" element={<ConfirmResetPassword />} />
         
         {/* Fallback routes */}
         <Route path="*" element={<NotFound />} />

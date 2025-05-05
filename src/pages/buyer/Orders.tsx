@@ -59,11 +59,7 @@ const Orders = () => {
       const data = await response.json();
       setOrders(data);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load orders",
-        variant: "destructive",
-      });
+      console.log(error)
     } finally {
       setLoading(false);
     }

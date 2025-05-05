@@ -133,12 +133,15 @@ const FarmerLivestock = () => {
       setLivestock(data || []);
       calculateStats(data || []);
     } catch (error) {
-      if (!handleTokenExpiration(error, navigate, { toast, dismiss: () => {}, toasts: [] })) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch livestock",
-          variant: "destructive",
-        });
+      // if (!handleTokenExpiration(error, navigate, { toast, dismiss: () => {}, toasts: [] })) {
+      //   toast({
+      //     title: "Error",
+      //     description: "Failed to fetch livestock",
+      //     variant: "destructive",
+      //   });
+      // }
+      if(!handleTokenExpiration(error, navigate, { toast, dismiss: () => {}, toasts: [] })){
+        console.log("Failed to fetch livestock")
       }
     } finally {
       setIsLoading(false);

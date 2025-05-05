@@ -17,12 +17,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+const rwandaPhoneRegex = /^(\+250(72|73|78|79)\d{7}|07[2-3,8-9]\d{7})$/;
+
 const signupSchema = z.object({
   firstName: z.string().min(2, { message: "First name must be at least 2 characters" }),
   lastName: z.string().min(2, { message: "Last name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
-  phone: z.string().min(10, { message: "Phone number must be at least 10 digits" }),
+  phone: z.string().refine(
+    (val) => rwandaPhoneRegex.test(val),
+    {
+      message:
+        "Phone must be a valid Rwandan number: +25072/73/78/79xxxxxxx or 07[2/3/8/9]xxxxxxx",
+    }
+  ),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  confirmPassword: z.string().min(6, { message: "Please confirm your password" }),
   role: z.enum(["FARMER", "BUYER"], { required_error: "Please select a role" }),
   address: z.object({
     province: z.string().min(1, "Province is required"),
@@ -32,6 +41,9 @@ const signupSchema = z.object({
     village: z.string().min(1, "Village is required"),
   }),
   terms: z.boolean().refine(val => val === true, { message: "You must accept the terms and conditions" }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
@@ -49,6 +61,7 @@ const SignupForm = () => {
       email: "",
       phone: "",
       password: "",
+      confirmPassword: "",
       role: "FARMER",
       address: {
         province: "",
@@ -182,7 +195,7 @@ const SignupForm = () => {
               <FormItem>
                 <FormLabel>Phone Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="+250 7XX XXX XXX" {...field} />
+                  <Input placeholder="+2507XXXXXXXX or 07XXXXXXXX" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -197,6 +210,20 @@ const SignupForm = () => {
                 <FormLabel>Password</FormLabel>
                 <FormControl>
                   <Input type="password" placeholder="••••••••" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm Password</FormLabel>
+                <FormControl>
+                  <Input type="password" placeholder="Re-enter your password" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -329,6 +356,11 @@ const SignupForm = () => {
           </Button>
         </form>
       </Form>
+      <div className="text-center text-sm w-full mt-2">
+        <Link to="/reset-password" className="text-farm-forest hover:underline">
+          Forgot password?
+        </Link>
+      </div>
     </AuthLayout>
   );
 };

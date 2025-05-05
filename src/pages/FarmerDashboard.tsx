@@ -148,11 +148,7 @@ const FarmerDashboard = () => {
       calculateStats(data || []);
     } catch (error) {
       if (!handleTokenExpiration(error, navigate, { toast, dismiss: () => {}, toasts: [] })) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch livestock data",
-          variant: "destructive",
-        });
+       console.log("Failed to fetch farmer livestock")
       }
     } finally {
       setIsLoading(false);
@@ -415,7 +411,7 @@ const FarmerDashboard = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Sold Items</CardTitle>
+            <CardTitle className="text-sm font-medium">Livestock Not for Sale</CardTitle>
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
@@ -452,7 +448,7 @@ const FarmerDashboard = () => {
             <div className="text-center py-8">
               <div className="flex flex-col items-center gap-2">
                 <Beef className="h-12 w-12 text-muted-foreground opacity-50" />
-                <h3 className="text-lg font-medium">No livestock found</h3>
+                <h3 className="text-lg font-medium">No livestock on market yet</h3>
                 <p className="text-sm text-muted-foreground">
                   You haven't added any livestock yet. Click the "Add Livestock" button to get started.
                 </p>
