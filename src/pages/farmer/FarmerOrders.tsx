@@ -24,17 +24,19 @@ interface Cart {
     imageUrls?: string;
   };
   quantity: number;
+  unitPrice: number;
+  totalPrice: number;
   buyer: {
     id: number;
-    firstName: string;
-    lastName: string;
+    buyerName: string;
+    phoneNumber: string;
     email: string;
   };
 }
 
 interface Order {
   id: number;
-  cart: Cart;
+  carts: Cart[];
   orderDate: string;
   deliveryDate: string;
   deliveryAddress: Address;
@@ -68,6 +70,7 @@ const FarmerOrders = () => {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        
       });
 
       if (!response.ok) {
@@ -80,9 +83,11 @@ const FarmerOrders = () => {
 
       const data = await response.json();
       setOrders(data);
+      console.log(data)
+      console.log(data.carts)
     } catch (error) {
-      if (!handleTokenExpiration(error, navigate, toast)) {
-       console.log("Failed to fetch orders")
+      if (!handleTokenExpiration(error, navigate, { toast, dismiss: () => {}, toasts: [] })) {
+        console.log("Failed to fetch orders")
       }
     } finally {
       setIsLoading(false);
@@ -106,6 +111,40 @@ const FarmerOrders = () => {
     }
   };
 
+  const handleApprove = async (orderId: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:8080/api/orders/${orderId}/approve`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to approve order");
+      toast({ title: "Order approved", description: `Order #${orderId} has been approved.` });
+      fetchOrders(); // Refresh orders
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to approve order", variant: "destructive" });
+    }
+  };
+
+  const handleReject = async (orderId: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:8080/api/orders/${orderId}/cancel`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to reject order");
+      toast({ title: "Order rejected", description: `Order #${orderId} has been rejected.` });
+      fetchOrders(); // Refresh orders
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to reject order", variant: "destructive" });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -113,6 +152,7 @@ const FarmerOrders = () => {
       </div>
     );
   }
+
 
   return (
     <div className="space-y-6">
@@ -138,63 +178,70 @@ const FarmerOrders = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {orders.map((order) => (
-            <Card key={order.id}>
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">Order #{order.id}</CardTitle>
-                  <Badge className={getStatusColor(order.orderStatus)}>
-                    {order.orderStatus}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="h-16 w-16 rounded-md overflow-hidden bg-muted">
-                      <img
-                        src={order.cart.livestock.imageUrls || "/placeholder.svg"}
-                        alt={order.cart.livestock.type}
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg";
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">{order.cart.livestock.type}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {order.cart.livestock.breed}
-                      </p>
-                      <p className="text-sm font-medium">
-                        ${order.cart.livestock.price.toFixed(2)} × {order.cart.quantity}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span>
-                        {order.cart.buyer.firstName} {order.cart.buyer.lastName}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Buyer Name</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Phone Number</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Livestock Type</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Breed</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unit Price</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total Price</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Order Date</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Delivery Date</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Delivery Address</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {orders.map((order) => (
+                order.carts.map((cart) => (
+                  <tr key={`${order.id}-${cart.id}`}>
+                    <td className="px-4 py-2">{order.id}</td>
+                    <td className="px-4 py-2">{cart.buyer ? cart.buyer.buyerName : 'Unknown Buyer'}</td>
+                    <td className="px-4 py-2">{cart.buyer ? cart.buyer.phoneNumber : 'N/A'}</td>
+                    <td className="px-4 py-2">{cart.livestock.type}</td>
+                    <td className="px-4 py-2">{cart.livestock.breed}</td>
+                    <td className="px-4 py-2">{cart.quantity}</td>
+                    <td className="px-4 py-2">${cart.unitPrice}</td>
+                    <td className="px-4 py-2">${cart.totalPrice}</td>
+                    <td className="px-4 py-2">{new Date(order.orderDate).toLocaleDateString()}</td>
+                    <td className="px-4 py-2">{new Date(order.deliveryDate).toLocaleDateString()}</td>
+                    <td className="px-4 py-2">
+                      {order.deliveryAddress.village}, {order.deliveryAddress.cell}, {order.deliveryAddress.sector}, {order.deliveryAddress.district}, {order.deliveryAddress.province}
+                    </td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(order.orderStatus)}`}>
+                        {order.orderStatus}
                       </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>Ordered on {new Date(order.orderDate).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>
-                        {order.deliveryAddress.village}, {order.deliveryAddress.cell}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    </td>
+                    <td className="px-4 py-2">
+                      {(order.orderStatus === "PENDING" || order.orderStatus === "CONFIRMED") && (
+                        <div className="flex gap-2">
+                          <button
+                            className="bg-green-600 text-white px-2 py-1 rounded text-xs"
+                            onClick={() => handleApprove(order.id)}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            className="bg-red-600 text-white px-2 py-1 rounded text-xs"
+                            onClick={() => handleReject(order.id)}
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

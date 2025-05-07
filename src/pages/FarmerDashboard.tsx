@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { jwtDecode } from "jwt-decode";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
 
 interface Livestock {
   livestockId: number;
@@ -70,6 +71,13 @@ const FarmerDashboard = () => {
   });
   const [isLivestockDialogOpen, setIsLivestockDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [orderTrends, setOrderTrends] = useState<{ date: string; count: number }[]>([]);
+  const [trendView, setTrendView] = useState<'week' | 'month' | 'year'>('month');
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
 
   const form = useForm<LivestockFormValues>({
     resolver: zodResolver(livestockSchema),
@@ -112,7 +120,12 @@ const FarmerDashboard = () => {
   useEffect(() => {
     fetchLivestock();
     extractFarmerFromToken();
+    fetchOrderTrends(trendView);
   }, []);
+
+  useEffect(() => {
+    fetchOrderTrends(trendView);
+  }, [trendView]);
 
   const fetchLivestock = async () => {
     try {
@@ -218,6 +231,56 @@ const FarmerDashboard = () => {
           variant: "destructive",
         });
       }
+    }
+  };
+
+  const fetchOrderTrends = async (view: 'week' | 'month' | 'year' = trendView) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const response = await fetch("http://localhost:8080/api/orders/farmer", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      let trends: Record<string, number> = {};
+      let trendArr: { date: string; count: number }[] = [];
+      if (view === 'week') {
+        // Aggregate by weekday (0=Mon, ..., 6=Sun)
+        trends = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+        data.forEach((order: any) => {
+          const date = new Date(order.orderDate);
+          // getDay: 0=Sun, 1=Mon, ..., 6=Sat
+          let dayIdx = date.getDay();
+          // Convert to 0=Mon, ..., 6=Sun
+          dayIdx = dayIdx === 0 ? 6 : dayIdx - 1;
+          const day = weekDays[dayIdx];
+          trends[day] = (trends[day] || 0) + 1;
+        });
+        trendArr = weekDays.map(day => ({ date: day, count: trends[day] || 0 }));
+      } else if (view === 'month') {
+        // Aggregate by month
+        trends = months.reduce((acc, m) => ({ ...acc, [m]: 0 }), {});
+        data.forEach((order: any) => {
+          const date = new Date(order.orderDate);
+          const month = months[date.getMonth()];
+          trends[month] = (trends[month] || 0) + 1;
+        });
+        trendArr = months.map(month => ({ date: month, count: trends[month] || 0 }));
+      } else if (view === 'year') {
+        // Aggregate by year
+        data.forEach((order: any) => {
+          const date = new Date(order.orderDate);
+          const year = date.getFullYear().toString();
+          trends[year] = (trends[year] || 0) + 1;
+        });
+        // Show all years present in data, sorted
+        const years = Object.keys(trends).sort((a, b) => parseInt(a) - parseInt(b));
+        trendArr = years.map(year => ({ date: year, count: trends[year] }));
+      }
+      setOrderTrends(trendArr);
+    } catch (e) {
+      // ignore
     }
   };
 
@@ -387,6 +450,8 @@ const FarmerDashboard = () => {
         </div>
       </div>
 
+      {/* Order Trends Graph */}
+      
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -516,7 +581,69 @@ const FarmerDashboard = () => {
             </div>
           )}
         </CardContent>
+
       </Card>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Order Trends</CardTitle>
+            <div className="flex items-center gap-2">
+              <label htmlFor="trendView" className="sr-only">View By</label>
+              <select
+                id="trendView"
+                className="border rounded px-2 py-1 text-sm"
+                value={trendView}
+                onChange={e => setTrendView(e.target.value as 'week' | 'month' | 'year')}
+              >
+                <option value="week">By Week</option>
+                <option value="month">By Month</option>
+                <option value="year">By Year</option>
+              </select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={orderTrends}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="date"
+                  tickFormatter={(value) => {
+                    if (trendView === 'month') {
+                      return value;
+                    } else if (trendView === 'year') {
+                      return value;
+                    } else if (trendView === 'week') {
+                      return value;
+                    }
+                    return value;
+                  }}
+                />
+                <YAxis allowDecimals={false} />
+                <Tooltip 
+                  formatter={(value) => [value, 'Orders']}
+                  labelFormatter={(label) => {
+                    if (trendView === 'month') {
+                      return label;
+                    } else if (trendView === 'year') {
+                      return label;
+                    } else if (trendView === 'week') {
+                      return label;
+                    }
+                    return label;
+                  }}
+                />
+                <Bar dataKey="count" fill="#4ade80" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
     </div>
   );
 };

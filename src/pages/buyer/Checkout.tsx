@@ -98,23 +98,14 @@ const Checkout = () => {
         navigate("/login");
         return;
       }
-      // Only create order for the selected cart item if cartId is present
-      const itemsToOrder = cartId ? cartItems.filter(item => item.id === Number(cartId)) : cartItems;
-      if (!itemsToOrder.length) {
-        toast({ title: "Error", description: "No cart item selected.", variant: "destructive" });
-        return;
-      }
-      for (const item of itemsToOrder) {
-        console.log({
-          cart: { id: item.id },
-          deliveryAddress: {
-            province: data.province,
-            district: data.district,
-            sector: data.sector,
-            cell: data.cell,
-            village: data.village,
-          },
-        });
+
+      if (cartId) {
+        // Single cart order
+        const item = cartItems.find(item => item.id === Number(cartId));
+        if (!item) {
+          toast({ title: "Error", description: "No cart item selected.", variant: "destructive" });
+          return;
+        }
         const response = await fetch("http://localhost:8080/api/orders/create-from-cart", {
           method: "POST",
           headers: {
@@ -122,7 +113,32 @@ const Checkout = () => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            cart: { id: item.id },
+            carts: [{ id: item.id }],
+            deliveryAddress: {
+              province: data.province,
+              district: data.district,
+              sector: data.sector,
+              cell: data.cell,
+              village: data.village,
+            },
+          }),
+        });
+        if (!response.ok) throw new Error("Failed to create order");
+      } else {
+        // Multiple cart order
+        const cartIds = cartItems.map(item => item.id);
+        if (!cartIds.length) {
+          toast({ title: "Error", description: "No cart items in cart.", variant: "destructive" });
+          return;
+        }
+        const response = await fetch("http://localhost:8080/api/orders/create-from-carts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            cartIds,
             deliveryAddress: {
               province: data.province,
               district: data.district,
@@ -134,6 +150,7 @@ const Checkout = () => {
         });
         if (!response.ok) throw new Error("Failed to create order");
       }
+
       toast({
         title: "Success",
         description: "Order placed successfully",

@@ -11,17 +11,18 @@ interface Order {
   orderDate: string;
   deliveryDate: string;
   orderStatus: string;
-  cart: {
+  carts: {
     livestock: {
-      name: string;
+      type: string;
       description: string;
       price: number;
       imageUrl: string;
+      breed:string;
     };
     quantity: number;
     unitPrice: number;
     totalPrice: number;
-  };
+  }[];
   deliveryAddress: {
     province: string;
     district: string;
@@ -106,85 +107,41 @@ const Orders = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
-          {orders.map((order) => (
-            <Card key={order.id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>Order #{order.id}</CardTitle>
-                    <CardDescription>
-                      Placed on {new Date(order.orderDate).toLocaleDateString()}
-                    </CardDescription>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                      order.orderStatus
-                    )}`}
-                  >
-                    {order.orderStatus}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <div className="flex items-start gap-4">
-                      <div className="w-20 h-20 relative">
-                        <img
-                          src={order.cart.livestock.imageUrl}
-                          alt={order.cart.livestock.name}
-                          className="object-cover rounded-md w-full h-full"
-                        />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">
-                          {order.cart.livestock.name}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          {order.cart.livestock.description}
-                        </p>
-                        <div className="mt-2">
-                          <p className="text-sm">
-                            Quantity: {order.cart.quantity}
-                          </p>
-                          <p className="text-sm font-semibold">
-                            Total: ${order.cart.totalPrice}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
-                      <div>
-                        <p className="font-medium">Delivery Address</p>
-                        <p className="text-sm text-gray-500">
-                          {order.deliveryAddress.village},{" "}
-                          {order.deliveryAddress.cell}
-                          <br />
-                          {order.deliveryAddress.sector},{" "}
-                          {order.deliveryAddress.district}
-                          <br />
-                          {order.deliveryAddress.province}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Calendar className="w-5 h-5 text-gray-500 mt-0.5" />
-                      <div>
-                        <p className="font-medium">Expected Delivery</p>
-                        <p className="text-sm text-gray-500">
-                          {new Date(order.deliveryDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Livestock Name</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unit Price</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total Price</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Order Date</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Delivery Address</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {orders.map((order) => (
+                order.carts.map((cart, idx) => (
+                  <tr key={order.id + '-' + idx}>
+                    <td className="px-4 py-2">{order.id}</td>
+                    <td className="px-4 py-2">{cart.livestock.type}</td>
+                    <td className="px-4 py-2">{cart.livestock.description}</td>
+                    <td className="px-4 py-2">{cart.quantity}</td>
+                    <td className="px-4 py-2">${cart.unitPrice}</td>
+                    <td className="px-4 py-2">${cart.totalPrice}</td>
+                    <td className="px-4 py-2">{new Date(order.orderDate).toLocaleDateString()}</td>
+                    <td className="px-4 py-2">{order.deliveryAddress.village}, {order.deliveryAddress.cell}, {order.deliveryAddress.sector}, {order.deliveryAddress.district}, {order.deliveryAddress.province}</td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(order.orderStatus)}`}>{order.orderStatus}</span>
+                    </td>
+                  </tr>
+                ))
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
