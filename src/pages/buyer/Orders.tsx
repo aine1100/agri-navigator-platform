@@ -37,6 +37,9 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchOrders();
@@ -83,6 +86,43 @@ const Orders = () => {
     }
   };
 
+  const filterOrders = (orders: Order[]) => {
+    return orders.filter(order => {
+      const matchesSearch = searchQuery === "" || 
+        order.id.toString().includes(searchQuery) ||
+        order.carts.some(cart => 
+          cart.livestock.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          cart.livestock.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          cart.livestock.breed.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+      const matchesStatus = statusFilter === "all" || 
+        order.orderStatus.toLowerCase() === statusFilter.toLowerCase();
+
+      const orderDate = new Date(order.orderDate);
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
+      const ninetyDaysAgo = new Date(now.setDate(now.getDate() - 90));
+
+      let matchesDate = true;
+      switch (dateFilter) {
+        case "last30":
+          matchesDate = orderDate >= thirtyDaysAgo;
+          break;
+        case "last90":
+          matchesDate = orderDate >= ninetyDaysAgo;
+          break;
+        case "thisYear":
+          matchesDate = orderDate.getFullYear() === new Date().getFullYear();
+          break;
+        default:
+          matchesDate = true;
+      }
+
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  };
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
@@ -123,7 +163,7 @@ const Orders = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {orders.map((order) => (
+              {filterOrders(orders).map((order) => (
                 order.carts.map((cart, idx) => (
                   <tr key={order.id + '-' + idx}>
                     <td className="px-4 py-2">{order.id}</td>

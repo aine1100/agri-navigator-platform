@@ -26,6 +26,7 @@ interface CartItem {
 }
 
 const checkoutFormSchema = z.object({
+ 
   province: z.string().min(1, "Province is required"),
   district: z.string().min(1, "District is required"),
   sector: z.string().min(1, "Sector is required"),
@@ -46,6 +47,7 @@ const Checkout = () => {
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutFormSchema),
     defaultValues: {
+     
       province: "",
       district: "",
       sector: "",
@@ -114,6 +116,7 @@ const Checkout = () => {
           },
           body: JSON.stringify({
             carts: [{ id: item.id }],
+          
             deliveryAddress: {
               province: data.province,
               district: data.district,
@@ -139,6 +142,7 @@ const Checkout = () => {
           },
           body: JSON.stringify({
             cartIds,
+          
             deliveryAddress: {
               province: data.province,
               district: data.district,
@@ -203,6 +207,7 @@ const Checkout = () => {
               <CardContent>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    
                     <FormField
                       control={form.control}
                       name="province"

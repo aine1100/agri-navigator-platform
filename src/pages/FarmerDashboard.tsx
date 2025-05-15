@@ -2,9 +2,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { handleTokenExpiration } from "@/utils/auth";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCcw, TrendingUp, TrendingDown, CircleDollarSign, Beef, ArrowRight } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Plus,
+  RefreshCcw,
+  TrendingUp,
+  TrendingDown,
+  CircleDollarSign,
+  Beef,
+  ArrowRight,
+  Package,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
@@ -12,7 +36,22 @@ import { useToast } from "@/components/ui/use-toast";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { jwtDecode } from "jwt-decode";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+} from "recharts";
 
 interface Livestock {
   livestockId: number;
@@ -45,6 +84,20 @@ interface Farmer {
   role: string;
 }
 
+interface Cart {
+  livestock: {
+    type: string;
+    quantity: number;
+  };
+}
+
+interface Order {
+  id: string;
+  orderDate: string;
+  orderStatus: string;
+  carts: Cart[];
+}
+
 const livestockSchema = z.object({
   type: z.string().min(1, "Type is required"),
   breeds: z.string().min(1, "Breed is required"),
@@ -57,6 +110,8 @@ const livestockSchema = z.object({
 });
 
 type LivestockFormValues = z.infer<typeof livestockSchema>;
+
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82CA9D"];
 
 const FarmerDashboard = () => {
   const { toast } = useToast();
@@ -72,12 +127,27 @@ const FarmerDashboard = () => {
   const [isLivestockDialogOpen, setIsLivestockDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [orderTrends, setOrderTrends] = useState<{ date: string; count: number }[]>([]);
-  const [trendView, setTrendView] = useState<'week' | 'month' | 'year'>('month');
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const [trendView, setTrendView] = useState<"week" | "month" | "year">("month");
+  const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [animalOrderDistribution, setAnimalOrderDistribution] = useState<
+    { name: string; value: number }[]
+  >([]);
+  const [totalOrderAmount, setTotalOrderAmount] = useState(0);
 
   const form = useForm<LivestockFormValues>({
     resolver: zodResolver(livestockSchema),
@@ -119,13 +189,13 @@ const FarmerDashboard = () => {
 
   useEffect(() => {
     fetchLivestock();
+    fetchOrders();
     extractFarmerFromToken();
-    fetchOrderTrends(trendView);
   }, []);
 
   useEffect(() => {
     fetchOrderTrends(trendView);
-  }, [trendView]);
+  }, [trendView, orders]);
 
   const fetchLivestock = async () => {
     try {
@@ -160,8 +230,14 @@ const FarmerDashboard = () => {
       setLivestock(data || []);
       calculateStats(data || []);
     } catch (error) {
-      if (!handleTokenExpiration(error, navigate, { toast, dismiss: () => {}, toasts: [] })) {
-       console.log("Failed to fetch farmer livestock")
+      if (
+        !handleTokenExpiration(error, navigate, {
+          toast,
+          dismiss: () => {},
+          toasts: [],
+        })
+      ) {
+        console.log("Failed to fetch farmer livestock");
       }
     } finally {
       setIsLoading(false);
@@ -171,7 +247,7 @@ const FarmerDashboard = () => {
   const calculateStats = (livestock: Livestock[]) => {
     const stats = {
       totalLivestock: livestock.length,
-      totalValue: livestock.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+      totalValue: livestock.reduce((sum, item) => sum + item.price * item.quantity, 0),
       soldItems: livestock.reduce((sum, item) => sum + (item.count - item.quantity), 0),
       availableItems: livestock.reduce((sum, item) => sum + item.quantity, 0),
     };
@@ -218,13 +294,19 @@ const FarmerDashboard = () => {
       setIsLivestockDialogOpen(false);
       form.reset();
       fetchLivestock();
-      
+
       toast({
         title: "Success",
         description: "Livestock added successfully",
       });
     } catch (error) {
-      if (!handleTokenExpiration(error, navigate, { toast, dismiss: () => {}, toasts: [] })) {
+      if (
+        !handleTokenExpiration(error, navigate, {
+          toast,
+          dismiss: () => {},
+          toasts: [],
+        })
+      ) {
         toast({
           title: "Error",
           description: "Failed to add livestock",
@@ -234,54 +316,161 @@ const FarmerDashboard = () => {
     }
   };
 
-  const fetchOrderTrends = async (view: 'week' | 'month' | 'year' = trendView) => {
+  const fetchOrders = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
+
       const response = await fetch("http://localhost:8080/api/orders/farmer", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) return;
+
+      if (!response.ok) throw new Error("Failed to fetch orders");
       const data = await response.json();
+      console.log("Fetched orders:", data);
+      
+      // Calculate total order amount
+      const totalAmount = data.reduce((sum: number, order: Order) => {
+        if (!order || !order.carts || !order.carts.length) return sum;
+        
+        return sum + order.carts.reduce((cartSum: number, cart: Cart) => {
+          if (cart.livestock) {
+            return cartSum + (cart.livestock.price * cart.livestock.quantity);
+          }
+          return cartSum;
+        }, 0);
+      }, 0);
+      
+      setTotalOrderAmount(totalAmount);
+      
+      // Calculate animal order distribution
+      const distribution = data.reduce((acc: { [key: string]: number }, order: Order) => {
+        if (!order || !order.carts || !order.carts.length) {
+          console.warn("Invalid order data:", order);
+          return acc;
+        }
+        
+        order.carts.forEach(cart => {
+          if (cart.livestock) {
+            const type = cart.livestock.type || "Unknown";
+            const quantity = cart.livestock.quantity || 0;
+            acc[type] = (acc[type] || 0) + quantity;
+          }
+        });
+        
+        return acc;
+      }, {});
+
+      const distributionArray = Object.entries(distribution)
+        .filter(([_, value]) => Number(value) > 0)
+        .map(([name, value]) => ({
+          name,
+          value: Number(value),
+        }));
+
+      setAnimalOrderDistribution(distributionArray);
+      setOrders(data);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch orders",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchOrderTrends = async (view: "week" | "month" | "year" = trendView) => {
+    try {
+      if (!orders.length) return;
+      
       let trends: Record<string, number> = {};
       let trendArr: { date: string; count: number }[] = [];
-      if (view === 'week') {
-        // Aggregate by weekday (0=Mon, ..., 6=Sun)
+
+      if (view === "week") {
         trends = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
-        data.forEach((order: any) => {
+        orders.forEach((order) => {
           const date = new Date(order.orderDate);
-          // getDay: 0=Sun, 1=Mon, ..., 6=Sat
           let dayIdx = date.getDay();
-          // Convert to 0=Mon, ..., 6=Sun
           dayIdx = dayIdx === 0 ? 6 : dayIdx - 1;
           const day = weekDays[dayIdx];
           trends[day] = (trends[day] || 0) + 1;
         });
-        trendArr = weekDays.map(day => ({ date: day, count: trends[day] || 0 }));
-      } else if (view === 'month') {
-        // Aggregate by month
+        trendArr = weekDays.map((day) => ({ date: day, count: trends[day] || 0 }));
+      } else if (view === "month") {
         trends = months.reduce((acc, m) => ({ ...acc, [m]: 0 }), {});
-        data.forEach((order: any) => {
+        orders.forEach((order) => {
           const date = new Date(order.orderDate);
           const month = months[date.getMonth()];
           trends[month] = (trends[month] || 0) + 1;
         });
-        trendArr = months.map(month => ({ date: month, count: trends[month] || 0 }));
-      } else if (view === 'year') {
-        // Aggregate by year
-        data.forEach((order: any) => {
+        trendArr = months.map((month) => ({ date: month, count: trends[month] || 0 }));
+      } else if (view === "year") {
+        orders.forEach((order) => {
           const date = new Date(order.orderDate);
           const year = date.getFullYear().toString();
           trends[year] = (trends[year] || 0) + 1;
         });
-        // Show all years present in data, sorted
         const years = Object.keys(trends).sort((a, b) => parseInt(a) - parseInt(b));
-        trendArr = years.map(year => ({ date: year, count: trends[year] }));
+        trendArr = years.map((year) => ({ date: year, count: trends[year] }));
       }
       setOrderTrends(trendArr);
-    } catch (e) {
-      // ignore
+    } catch (error) {
+      console.error("Error processing order trends:", error);
     }
+  };
+
+  const renderPieChart = () => {
+    if (animalOrderDistribution.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <div className="flex flex-col items-center gap-2">
+            <Package className="h-12 w-12 text-muted-foreground opacity-50" />
+            <h3 className="text-lg font-medium">No orders yet</h3>
+            <p className="text-sm text-muted-foreground">
+              You haven't received any orders yet.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={animalOrderDistribution}
+              cx="50%"
+              cy="50%"
+              outerRadius={100}
+              fill="#8884d8"
+              dataKey="value"
+              label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+              labelLine={true}
+            >
+              {animalOrderDistribution.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                  stroke="#fff"
+                  strokeWidth={2}
+                />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(value) => [`${value} orders`, "Quantity"]}
+              contentStyle={{
+                backgroundColor: "white",
+                border: "1px solid #e5e7eb",
+                borderRadius: "0.375rem",
+                boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
+              }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -294,20 +483,29 @@ const FarmerDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header Section */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Welcome, {farmer?.firstName || 'Farmer'} {farmer?.lastName || ''}
+            Welcome, {farmer?.firstName || "Farmer"} {farmer?.lastName || ""}
           </h1>
-          <p className="text-muted-foreground">
-            Manage your livestock inventory and sales
-          </p>
+          <p className="text-muted-foreground">Your farming dashboard overview</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchLivestock}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              fetchLivestock();
+              fetchOrderTrends(trendView);
+            }}
+          >
             <RefreshCcw className="h-4 w-4 mr-2" /> Refresh
           </Button>
-          <Dialog open={isLivestockDialogOpen} onOpenChange={setIsLivestockDialogOpen}>
+          <Dialog
+            open={isLivestockDialogOpen}
+            onOpenChange={setIsLivestockDialogOpen}
+          >
             <DialogTrigger asChild>
               <Button className="bg-farm-forest hover:bg-farm-forest/90">
                 <Plus className="h-4 w-4 mr-2" /> Add Livestock
@@ -356,7 +554,11 @@ const FarmerDashboard = () => {
                         <FormItem>
                           <FormLabel>Count</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -369,7 +571,11 @@ const FarmerDashboard = () => {
                         <FormItem>
                           <FormLabel>Available Quantity</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -384,7 +590,12 @@ const FarmerDashboard = () => {
                         <FormItem>
                           <FormLabel>Weight (kg)</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} />
+                            <Input
+                              type="number"
+                              step="0.01"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -397,7 +608,12 @@ const FarmerDashboard = () => {
                         <FormItem>
                           <FormLabel>Price ($)</FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} />
+                            <Input
+                              type="number"
+                              step="0.01"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -450,58 +666,142 @@ const FarmerDashboard = () => {
         </div>
       </div>
 
-      {/* Order Trends Graph */}
-      
-      {/* Statistics Cards */}
+      {/* Statistics Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Livestock</CardTitle>
-            <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+            <Beef className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalLivestock}</div>
+            <div className="text-2xl font-bold">{livestock.length}</div>
             <p className="text-xs text-muted-foreground">Total livestock items</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-500" />
+            <CircleDollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalValue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              ${livestock
+                .reduce((sum, item) => sum + item.price * item.quantity, 0)
+                .toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground">Total inventory value</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Livestock Not for Sale</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-500" />
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <Package className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.soldItems}</div>
-            <p className="text-xs text-muted-foreground">Total items sold</p>
+            <div className="text-2xl font-bold">{orders.length}</div>
+            <p className="text-xs text-muted-foreground">Orders received</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Available Items</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-500" />
+            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+            <TrendingUp className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.availableItems}</div>
-            <p className="text-xs text-muted-foreground">Items in stock</p>
+            <div className="text-2xl font-bold">
+              ${totalOrderAmount.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">From completed orders</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Livestock List */}
-      <Card>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 gap-6">
+        <Card className="bg-white shadow-sm">
+          <CardHeader>
+            <CardTitle>Analytics Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Animal Order Distribution Pie Chart */}
+              <div className="flex-1">
+                <h3 className="text-lg font-medium mb-4">Animal Order Distribution</h3>
+                {renderPieChart()}
+              </div>
+
+              {/* Order Trends Bar Chart */}
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium">Order Trends</h3>
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="trendView" className="sr-only">
+                      View By
+                    </label>
+                    <select
+                      id="trendView"
+                      className="border rounded px-2 py-1 text-sm bg-white"
+                      value={trendView}
+                      onChange={(e) =>
+                        setTrendView(e.target.value as "week" | "month" | "year")
+                      }
+                    >
+                      <option value="week">By Week</option>
+                      <option value="month">By Month</option>
+                      <option value="year">By Year</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={orderTrends}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        className="stroke-gray-200"
+                      />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fill: "#666" }}
+                        tickFormatter={(value) => {
+                          if (trendView === "month") return value;
+                          if (trendView === "year") return value;
+                          if (trendView === "week") return value;
+                          return value;
+                        }}
+                      />
+                      <YAxis allowDecimals={false} tick={{ fill: "#666" }} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "white",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "0.375rem",
+                          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
+                        }}
+                        formatter={(value) => [value, "Orders"]}
+                      />
+                      <Bar
+                        dataKey="count"
+                        fill="#4ade80"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Livestock Section */}
+      <Card className="bg-white shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recent Livestock</CardTitle>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             className="text-farm-forest hover:text-farm-forest/90"
             onClick={() => navigate("/farmer/livestock")}
           >
@@ -513,11 +813,11 @@ const FarmerDashboard = () => {
             <div className="text-center py-8">
               <div className="flex flex-col items-center gap-2">
                 <Beef className="h-12 w-12 text-muted-foreground opacity-50" />
-                <h3 className="text-lg font-medium">No livestock on market yet</h3>
+                <h3 className="text-lg font-medium">No livestock yet</h3>
                 <p className="text-sm text-muted-foreground">
-                  You haven't added any livestock yet. Click the "Add Livestock" button to get started.
+                  Add your first livestock to start selling
                 </p>
-                <Button 
+                <Button
                   className="mt-4 bg-farm-forest hover:bg-farm-forest/90"
                   onClick={() => setIsLivestockDialogOpen(true)}
                 >
@@ -528,45 +828,56 @@ const FarmerDashboard = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {livestock.slice(0, 3).map((item) => (
-                <Card key={item.livestockId}>
+                <Card
+                  key={item.livestockId}
+                  className="bg-gray-50 hover:shadow-md transition-shadow"
+                >
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <span>{item.type}</span>
-                      <span className={`text-sm font-medium ${
-                        item.status === "HEALTHY" ? "text-green-500" :
-                        item.status === "ATTENTION" ? "text-yellow-500" :
-                        "text-red-500"
-                      }`}>
+                      <span
+                        className={`text-sm font-medium px-2 py-1 rounded-full ${
+                          item.status === "HEALTHY"
+                            ? "bg-green-100 text-green-800"
+                            : item.status === "ATTENTION"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
                         {item.status}
                       </span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Breed:</span>
-                        <span>{item.breed}</span>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Breed:</span>
+                          <span className="font-medium">{item.breed}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Count:</span>
+                          <span className="font-medium">{item.count}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Available:</span>
+                          <span className="font-medium">{item.quantity}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Price:</span>
+                          <span className="font-medium">${item.price}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Count:</span>
-                        <span>{item.count}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Available:</span>
-                        <span>{item.quantity}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Price:</span>
-                        <span>${item.price}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Weight:</span>
-                        <span>{item.weight} kg</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-2">{item.description}</p>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {item.description}
+                      </p>
                       {item.imageUrls && (
                         <img
-                          src={item.imageUrls.startsWith('http') ? item.imageUrls : `http://localhost:8080${item.imageUrls}`}
+                          src={
+                            item.imageUrls.startsWith("http")
+                              ? item.imageUrls
+                              : `http://localhost:8080${item.imageUrls}`
+                          }
                           alt={item.type}
                           className="w-full h-48 object-cover rounded-md mt-2"
                           onError={(e) => {
@@ -581,69 +892,7 @@ const FarmerDashboard = () => {
             </div>
           )}
         </CardContent>
-
       </Card>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Order Trends</CardTitle>
-            <div className="flex items-center gap-2">
-              <label htmlFor="trendView" className="sr-only">View By</label>
-              <select
-                id="trendView"
-                className="border rounded px-2 py-1 text-sm"
-                value={trendView}
-                onChange={e => setTrendView(e.target.value as 'week' | 'month' | 'year')}
-              >
-                <option value="week">By Week</option>
-                <option value="month">By Month</option>
-                <option value="year">By Year</option>
-              </select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={orderTrends}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date"
-                  tickFormatter={(value) => {
-                    if (trendView === 'month') {
-                      return value;
-                    } else if (trendView === 'year') {
-                      return value;
-                    } else if (trendView === 'week') {
-                      return value;
-                    }
-                    return value;
-                  }}
-                />
-                <YAxis allowDecimals={false} />
-                <Tooltip 
-                  formatter={(value) => [value, 'Orders']}
-                  labelFormatter={(label) => {
-                    if (trendView === 'month') {
-                      return label;
-                    } else if (trendView === 'year') {
-                      return label;
-                    } else if (trendView === 'week') {
-                      return label;
-                    }
-                    return label;
-                  }}
-                />
-                <Bar dataKey="count" fill="#4ade80" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
     </div>
   );
 };

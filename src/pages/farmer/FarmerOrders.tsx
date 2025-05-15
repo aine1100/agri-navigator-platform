@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, Calendar, MapPin, User, ShoppingBag } from "lucide-react";
+import { Package, Calendar, MapPin, User, ShoppingBag, Download } from "lucide-react";
 import { handleTokenExpiration } from "@/utils/auth";
+import { Button } from "@/components/ui/button";
 
 interface Address {
   province: string;
@@ -46,6 +47,7 @@ interface Order {
 const FarmerOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -145,6 +147,68 @@ const FarmerOrders = () => {
     }
   };
 
+  const handleDownloadReport = async () => {
+    try {
+      setIsDownloading(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast({
+          title: "Error",
+          description: "Authentication token not found",
+          variant: "destructive",
+        });
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch("http://localhost:8080/api/orders/farmer/download", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to download report");
+      }
+
+      // Get the filename from the Content-Disposition header
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = "orders_report.pdf";
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Convert the response to blob
+      const blob = await response.blob();
+      
+      // Create a download link and trigger the download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "Orders report downloaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to download orders report",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -163,6 +227,14 @@ const FarmerOrders = () => {
             View and manage orders for your livestock
           </p>
         </div>
+        <Button
+          onClick={handleDownloadReport}
+          disabled={isDownloading || orders.length === 0}
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          {isDownloading ? "Downloading..." : "Download Report"}
+        </Button>
       </div>
 
       {orders.length === 0 ? (
@@ -183,8 +255,8 @@ const FarmerOrders = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Buyer Name</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Phone Number</th>
+                {/* <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Buyer Name</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Phone Number</th> */}
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Livestock Type</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Breed</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
@@ -202,8 +274,8 @@ const FarmerOrders = () => {
                 order.carts.map((cart) => (
                   <tr key={`${order.id}-${cart.id}`}>
                     <td className="px-4 py-2">{order.id}</td>
-                    <td className="px-4 py-2">{cart.buyer ? cart.buyer.buyerName : 'Unknown Buyer'}</td>
-                    <td className="px-4 py-2">{cart.buyer ? cart.buyer.phoneNumber : 'N/A'}</td>
+                    {/* <td className="px-4 py-2">{cart.buyer ? cart.buyer.buyerName : 'Unknown Buyer'}</td>
+                    <td className="px-4 py-2">{cart.buyer ? cart.buyer.phoneNumber : 'N/A'}</td> */}
                     <td className="px-4 py-2">{cart.livestock.type}</td>
                     <td className="px-4 py-2">{cart.livestock.breed}</td>
                     <td className="px-4 py-2">{cart.quantity}</td>
