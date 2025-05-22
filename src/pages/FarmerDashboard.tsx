@@ -88,6 +88,7 @@ interface Cart {
   livestock: {
     type: string;
     quantity: number;
+    price: number;
   };
 }
 
@@ -96,6 +97,7 @@ interface Order {
   orderDate: string;
   orderStatus: string;
   carts: Cart[];
+  paymentStatus: string;
 }
 
 const livestockSchema = z.object({

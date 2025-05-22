@@ -28,6 +28,9 @@ import Checkout from "./pages/buyer/Checkout";
 import Orders from "./pages/buyer/Orders";
 import RequestResetPassword from "./components/auth/forgotPassword";
 import ConfirmResetPassword from "./components/auth/confirmResetPassword";
+import Payment from "./pages/buyer/Payment";
+import PaymentSuccess from "./pages/buyer/PaymentSuccess";
+import PaymentCancel from "./pages/buyer/PaymentCancel";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -56,6 +59,9 @@ const App = () => (
         <Route path="/buyer/cart" element={<ProtectedRoute><Layout><Cart /></Layout></ProtectedRoute>} />
         <Route path="/buyer/checkout" element={<ProtectedRoute><Layout><Checkout /></Layout></ProtectedRoute>} />
         <Route path="/buyer/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
+        <Route path="/buyer/payment/:orderId" element={<ProtectedRoute><Layout><Payment /></Layout></ProtectedRoute>} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-cancel" element={<PaymentCancel />} />
         
         {/* Admin routes */}
         <Route path="/admin" element={<ProtectedRoute><Layout><AdminDashboard /></Layout></ProtectedRoute>} />

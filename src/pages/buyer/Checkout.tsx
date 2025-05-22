@@ -42,12 +42,11 @@ const Checkout = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const cartId = searchParams.get("cartId");
+  const selectedCartIds = searchParams.get("cartIds")?.split(",").map(Number) || [];
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutFormSchema),
     defaultValues: {
-     
       province: "",
       district: "",
       sector: "",
@@ -57,8 +56,17 @@ const Checkout = () => {
   });
 
   useEffect(() => {
+    if (selectedCartIds.length === 0) {
+      toast({
+        title: "No items selected",
+        description: "Please select items from your cart first",
+        variant: "destructive",
+      });
+      navigate("/buyer/cart");
+      return;
+    }
     fetchCartItems();
-  }, []);
+  }, [selectedCartIds]);
 
   const fetchCartItems = async () => {
     try {
@@ -67,21 +75,21 @@ const Checkout = () => {
         navigate("/login");
         return;
       }
-      let url = cartId
-        ? `http://localhost:8080/api/cart/${cartId}`
-        : `http://localhost:8080/api/cart`;
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch cart items");
-      const data = await response.json();
-      if (cartId) {
-        setCartItems([data]);
-      } else {
-        setCartItems(data);
-      }
+
+      // Fetch only the selected cart items
+      const items = await Promise.all(
+        selectedCartIds.map(async (cartId) => {
+          const response = await fetch(`http://localhost:8080/api/cart/${cartId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (!response.ok) throw new Error("Failed to fetch cart item");
+          return response.json();
+        })
+      );
+
+      setCartItems(items);
     } catch (error) {
       toast({
         title: "Error",
@@ -101,59 +109,25 @@ const Checkout = () => {
         return;
       }
 
-      if (cartId) {
-        // Single cart order
-        const item = cartItems.find(item => item.id === Number(cartId));
-        if (!item) {
-          toast({ title: "Error", description: "No cart item selected.", variant: "destructive" });
-          return;
-        }
-        const response = await fetch("http://localhost:8080/api/orders/create-from-cart", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+      const response = await fetch("http://localhost:8080/api/orders/create-from-cart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          selectedCartIds: selectedCartIds,
+          deliveryAddress: {
+            province: data.province,
+            district: data.district,
+            sector: data.sector,
+            cell: data.cell,
+            village: data.village,
           },
-          body: JSON.stringify({
-            carts: [{ id: item.id }],
-          
-            deliveryAddress: {
-              province: data.province,
-              district: data.district,
-              sector: data.sector,
-              cell: data.cell,
-              village: data.village,
-            },
-          }),
-        });
-        if (!response.ok) throw new Error("Failed to create order");
-      } else {
-        // Multiple cart order
-        const cartIds = cartItems.map(item => item.id);
-        if (!cartIds.length) {
-          toast({ title: "Error", description: "No cart items in cart.", variant: "destructive" });
-          return;
-        }
-        const response = await fetch("http://localhost:8080/api/orders/create-from-carts", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            cartIds,
-          
-            deliveryAddress: {
-              province: data.province,
-              district: data.district,
-              sector: data.sector,
-              cell: data.cell,
-              village: data.village,
-            },
-          }),
-        });
-        if (!response.ok) throw new Error("Failed to create order");
-      }
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to create order");
 
       toast({
         title: "Success",
@@ -185,12 +159,12 @@ const Checkout = () => {
       ) : cartItems.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center">
-            <p className="text-lg text-gray-500">Your cart is empty</p>
+            <p className="text-lg text-gray-500">No items selected</p>
             <Button
               className="mt-4"
-              onClick={() => navigate("/buyer/dashboard")}
+              onClick={() => navigate("/buyer/cart")}
             >
-              Browse Livestock
+              Back to Cart
             </Button>
           </CardContent>
         </Card>
@@ -207,7 +181,6 @@ const Checkout = () => {
               <CardContent>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    
                     <FormField
                       control={form.control}
                       name="province"
@@ -286,6 +259,9 @@ const Checkout = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Order Summary</CardTitle>
+                <CardDescription>
+                  {selectedCartIds.length} items selected
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {cartItems.map((item) => (

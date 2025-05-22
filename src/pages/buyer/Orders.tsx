@@ -5,12 +5,14 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { Package, MapPin, Calendar } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface Order {
   id: number;
   orderDate: string;
   deliveryDate: string;
   orderStatus: string;
+  paymentStatus: string;
   carts: {
     livestock: {
       type: string;
@@ -123,6 +125,37 @@ const Orders = () => {
     });
   };
 
+  const handlePayNow = async (orderId: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const response = await fetch(`http://localhost:8080/api/orders/${orderId}/pay`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to initiate payment");
+      }
+
+      const paymentUrl = await response.text();
+      // Redirect to Stripe checkout
+      window.location.href = paymentUrl;
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process payment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
@@ -175,7 +208,25 @@ const Orders = () => {
                     <td className="px-4 py-2">{new Date(order.orderDate).toLocaleDateString()}</td>
                     <td className="px-4 py-2">{order.deliveryAddress.village}, {order.deliveryAddress.cell}, {order.deliveryAddress.sector}, {order.deliveryAddress.district}, {order.deliveryAddress.province}</td>
                     <td className="px-4 py-2">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(order.orderStatus)}`}>{order.orderStatus}</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={
+                          order.orderStatus === "PENDING" ? "secondary" :
+                          order.orderStatus === "SHIPPPED" ? "outline" :
+                          order.orderStatus === "CANCELLED" ? "destructive" :
+                          "default"
+                        }>
+                          {order.orderStatus}
+                        </Badge>
+                        {order.orderStatus === "SHIPPED" && order.paymentStatus !== "PAID" && (
+                          <Button
+                            onClick={() => handlePayNow(order.id)}
+                            size="sm"
+                            className="ml-2"
+                          >
+                            Pay Now
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

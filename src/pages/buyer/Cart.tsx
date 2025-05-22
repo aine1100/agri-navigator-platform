@@ -28,7 +28,7 @@ const Cart = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
   useEffect(() => {
     fetchCartItems();
@@ -164,11 +164,31 @@ const Cart = () => {
     }
   };
 
-  const proceedToCheckout = () => {
-    navigate("/buyer/checkout");
+  const handleItemSelect = (cartId: number) => {
+    setSelectedItems(prev => {
+      if (prev.includes(cartId)) {
+        return prev.filter(id => id !== cartId);
+      } else {
+        return [...prev, cartId];
+      }
+    });
   };
 
-  const totalAmount = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  const proceedToCheckout = () => {
+    if (selectedItems.length === 0) {
+      toast({
+        title: "No items selected",
+        description: "Please select at least one item to proceed to checkout",
+        variant: "destructive",
+      });
+      return;
+    }
+    navigate(`/buyer/checkout?cartIds=${selectedItems.join(',')}`);
+  };
+
+  const totalAmount = cartItems
+    .filter(item => selectedItems.includes(item.id))
+    .reduce((sum, item) => sum + item.totalPrice, 0);
 
   return (
     <div className="container mx-auto py-8">
@@ -200,6 +220,14 @@ const Cart = () => {
               <Card key={item.id}>
                 <CardContent className="p-6">
                   <div className="flex gap-4">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.includes(item.id)}
+                        onChange={() => handleItemSelect(item.id)}
+                        className="h-4 w-4 rounded border-gray-300 text-farm-forest focus:ring-farm-forest"
+                      />
+                    </div>
                     <div className="w-24 h-24 relative">
                       <img
                         src={
@@ -278,6 +306,10 @@ const Cart = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
+                  <span>Selected Items</span>
+                  <span>{selectedItems.length} items</span>
+                </div>
+                <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span>${totalAmount}</span>
                 </div>
@@ -293,7 +325,11 @@ const Cart = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
-                <Button className="w-full" onClick={proceedToCheckout}>
+                <Button 
+                  className="w-full" 
+                  onClick={proceedToCheckout}
+                  disabled={selectedItems.length === 0}
+                >
                   Proceed to Checkout
                 </Button>
                 <Button
