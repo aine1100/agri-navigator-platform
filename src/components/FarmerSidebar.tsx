@@ -6,7 +6,8 @@ import {
   Wallet, 
   User, 
   Package,
-  LogOut
+  LogOut,
+  Home
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import NotificationBadge from "@/components/NotificationBadge";
 
 const FarmerSidebar = () => {
   const location = useLocation();
@@ -29,7 +31,7 @@ const FarmerSidebar = () => {
   const links = [
     {
       title: "Dashboard",
-      icon: Tractor,
+      icon: Home,
       href: "/farmer",
       active: location.pathname === "/farmer",
     },
@@ -39,7 +41,6 @@ const FarmerSidebar = () => {
       href: "/farmer/livestock",
       active: location.pathname === "/farmer/livestock",
     },
- 
     {
       title: "Financials",
       icon: Wallet,
@@ -81,8 +82,8 @@ const FarmerSidebar = () => {
   };
 
   return (
-    <Sidebar className="bg-[#1a472a] text-white">
-      <SidebarHeader className="p-4">
+    <Sidebar className="bg-gradient-to-b from-[#1a472a] to-[#2d5a3f] text-white">
+      <SidebarHeader className="p-4 border-b border-green-700/50">
         <div className="flex items-center gap-2">
           <Leaf className="h-6 w-6 text-white" />
           <span className="font-bold text-lg text-white">Agri Navigator</span>
@@ -92,7 +93,7 @@ const FarmerSidebar = () => {
         </div>
       </SidebarHeader>
       <SidebarContent className="flex flex-col justify-between h-full">
-        <nav className="grid gap-1 px-2">
+        <nav className="grid gap-1 px-2 py-4">
           <SidebarMenu>
             {links.map((link, index) => (
               <SidebarMenuItem key={index}>
@@ -100,8 +101,8 @@ const FarmerSidebar = () => {
                   isActive={link.active}
                   onClick={() => navigate(link.href)}
                   className={cn(
-                    "cursor-pointer text-white hover:bg-green-700/50",
-                    link.active && "bg-green-700 text-white"
+                    "cursor-pointer text-white/90 hover:bg-green-700/50 transition-colors duration-200",
+                    link.active && "bg-green-700 text-white shadow-md"
                   )}
                 >
                   <link.icon className="h-4 w-4 mr-2" />
@@ -109,13 +110,26 @@ const FarmerSidebar = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={location.pathname === "/farmer/notifications"}
+                onClick={() => navigate("/farmer/notifications")}
+                className={cn(
+                  "cursor-pointer text-white/90 hover:bg-green-700/50 transition-colors duration-200",
+                  location.pathname === "/farmer/notifications" && "bg-green-700 text-white shadow-md"
+                )}
+              >
+                <NotificationBadge userRole="FARMER" />
+                {state === "expanded" ? "Notifications" : ""}
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </nav>
       </SidebarContent>
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-4 border-t border-green-700/50">
         <SidebarMenuButton 
           onClick={handleLogout}
-          className="text-white hover:bg-green-700/50"
+          className="text-white/90 hover:bg-green-700/50 transition-colors duration-200"
         >
           <LogOut className="h-4 w-4 mr-2" />
           {state === "expanded" ? "Logout" : ""}

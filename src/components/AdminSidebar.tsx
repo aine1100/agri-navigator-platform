@@ -20,6 +20,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import NotificationBadge from "@/components/NotificationBadge";
 
 const AdminSidebar = () => {
   const location = useLocation();
@@ -109,6 +110,19 @@ const AdminSidebar = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={location.pathname === "/admin/notifications"}
+                onClick={() => navigate("/admin/notifications")}
+                className={cn(
+                  "cursor-pointer",
+                  location.pathname === "/admin/notifications" && "text-primary bg-muted hover:bg-muted"
+                )}
+              >
+                <NotificationBadge userRole="ADMIN" />
+                {state === "expanded" ? "Notifications" : ""}
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </nav>
       </SidebarContent>

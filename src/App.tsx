@@ -31,6 +31,8 @@ import ConfirmResetPassword from "./components/auth/confirmResetPassword";
 import Payment from "./pages/buyer/Payment";
 import PaymentSuccess from "./pages/buyer/PaymentSuccess";
 import PaymentCancel from "./pages/buyer/PaymentCancel";
+import FarmerNotifications from "./pages/farmer/Notifications";
+import BuyerNotifications from "./pages/buyer/Notifications";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -52,6 +54,7 @@ const App = () => (
         <Route path="/farmer/financials" element={<ProtectedRoute><Layout><FarmerFinancials /></Layout></ProtectedRoute>} />
         <Route path="/farmer/orders" element={<ProtectedRoute><Layout><FarmerOrders /></Layout></ProtectedRoute>} />
         <Route path="/farmer/settings" element={<ProtectedRoute><Layout><FarmerSettings /></Layout></ProtectedRoute>} />
+        <Route path="/farmer/notifications" element={<ProtectedRoute><Layout><FarmerNotifications /></Layout></ProtectedRoute>} />
         
         {/* Buyer routes */}
         <Route path="/buyer" element={<ProtectedRoute><Layout><BuyerDashboard /></Layout></ProtectedRoute>} />
@@ -62,6 +65,7 @@ const App = () => (
         <Route path="/buyer/payment/:orderId" element={<ProtectedRoute><Layout><Payment /></Layout></ProtectedRoute>} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/payment-cancel" element={<PaymentCancel />} />
+        <Route path="/buyer/notifications" element={<ProtectedRoute><Layout><BuyerNotifications /></Layout></ProtectedRoute>} />
         
         {/* Admin routes */}
         <Route path="/admin" element={<ProtectedRoute><Layout><AdminDashboard /></Layout></ProtectedRoute>} />
