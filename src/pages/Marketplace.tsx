@@ -48,11 +48,11 @@ type Product = {
   unit: string;
   description: string;
   image?: string;
-  ownerEmail?: string; // Made optional to handle undefined
-  farmerName?: string; // Derived or placeholder
-  farmId?: string; // Placeholder
-  location?: string; // Placeholder
-  quantity?: number; // Not in DB, placeholder for UI
+  ownerEmail?: string;
+  farmerName?: string;
+  farmId?: string;
+  location?: string;
+  quantity?: number;
 };
 
 type CartItem = {
@@ -83,58 +83,54 @@ const Marketplace = () => {
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [imageUrls, setImageUrls] = useState<{ [key: string]: string }>({});
+  const [isLoading, setIsLoading] = useState(true); // Added loading state
 
   // Fetch all products from backend
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch(`${BACKEND_BASE_URL}/api/products/all`);
+        setIsLoading(true);
+        const response = await fetch(`${BACKEND_BASE_URL}/api/livestock/v2/allProducts`);
         if (!response.ok) {
           throw new Error(`Failed to fetch products: ${response.status} ${response.statusText}`);
         }
         const data = await response.json();
         console.log("Fetched products:", data);
 
-        // Map backend data to Product type, adding placeholders
+        // Map backend data to Product type, aligning with response fields
         const mappedProducts = data.map((product: any) => ({
-          id: product.id,
-          name: product.name,
-          category: product.category,
-          price: product.price,
-          unit: product.unit,
+          id: product.livestockId?.toString() || product.id || `${Date.now()}`, // Use livestockId or fallback
+          name: product.breed || product.type || "Unnamed Product", // Use breed or type
+          category: product.type || "OTHER", // Use type as category
+          price: product.price || 0,
+          unit: product.unit || "unit", // Default unit
           description: product.description || "",
-          image: product.image,
-          ownerEmail: product.owner_email,
-          farmerName: product.owner_email,
+          image: `${BACKEND_BASE_URL}/`+product.imageUrls, // Use imageUrls from response
+          ownerEmail: product.owner_email || "unknown@farmer.com",
+          farmerName: product.owner_email || "Unknown Farmer",
           farmId: "1",
           location: "Rwanda",
-          quantity: 100,
+          quantity: product.quantity || 100,
         }));
 
         setProducts(mappedProducts);
+        console.log("Mapped products:", mappedProducts);
 
         // Fetch images with Authorization header
         const newImageUrls: { [key: string]: string } = {};
         for (const product of mappedProducts) {
-          if (product.image && product.image.startsWith("/uploads/")) {
+          if (product.image && product.image.startsWith("/Uploads/")) {
             try {
-              const imageResponse = await fetch(
-                `${BACKEND_BASE_URL}${product.image}`
-              );
+              const imageResponse = await fetch(`${BACKEND_BASE_URL}${product.image}`);
               if (imageResponse.ok) {
                 const blob = await imageResponse.blob();
                 newImageUrls[product.id] = URL.createObjectURL(blob);
               } else {
-                console.error(
-                  `Failed to fetch image for ${product.name}: ${imageResponse.status} ${imageResponse.statusText}`
-                );
+                console.error(`Failed to fetch image for ${product.name}: ${imageResponse.status}`);
                 newImageUrls[product.id] = "/placeholder.svg";
               }
             } catch (error) {
-              console.error(
-                `Error fetching image for ${product.name}: ${product.image}`,
-                error
-              );
+              console.error(`Error fetching image for ${product.name}: ${product.image}`, error);
               newImageUrls[product.id] = "/placeholder.svg";
             }
           } else {
@@ -142,6 +138,7 @@ const Marketplace = () => {
           }
         }
         setImageUrls(newImageUrls);
+        console.log("Image URLs:", newImageUrls);
       } catch (error) {
         console.error("Fetch products error:", error);
         toast({
@@ -149,6 +146,8 @@ const Marketplace = () => {
           description: "Failed to load products. Please try again later.",
           variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -157,24 +156,23 @@ const Marketplace = () => {
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.farmerName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+      !searchTerm ||
+      (product.name && product.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (product.farmerName && product.farmerName.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory =
-      selectedCategory === "all" || product.category === selectedCategory;
+      selectedCategory === "all" ||
+      (product.category && product.category.toUpperCase() === selectedCategory.toUpperCase());
     return matchesSearch && matchesCategory;
   });
+  console.log("Filtered products:", filteredProducts);
 
   const addToCart = (product: Product) => {
     setCart((prevCart) => {
-      const existingItem = prevCart.find(
-        (item) => item.productId === product.id
-      );
+      const existingItem = prevCart.find((item) => item.productId === product.id);
       if (existingItem) {
         return prevCart.map((item) =>
-          item.productId === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
+          item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       } else {
         return [
@@ -198,18 +196,14 @@ const Marketplace = () => {
   };
 
   const removeFromCart = (productId: string) => {
-    setCart((prevCart) =>
-      prevCart.filter((item) => item.productId !== productId)
-    );
+    setCart((prevCart) => prevCart.filter((item) => item.productId !== productId));
   };
 
   const updateQuantity = (productId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.productId === productId
-          ? { ...item, quantity: newQuantity }
-          : item
+        item.productId === productId ? { ...item, quantity: newQuantity } : item
       )
     );
   };
@@ -308,10 +302,7 @@ const Marketplace = () => {
                 className="pl-10"
               />
             </div>
-            <Select
-              value={selectedCategory}
-              onValueChange={setSelectedCategory}
-            >
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="md:w-[180px]">
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
@@ -326,6 +317,7 @@ const Marketplace = () => {
                 <SelectItem value="ANIMAL_PRODUCTS">Animal Products</SelectItem>
                 <SelectItem value="DAIRY">Dairy</SelectItem>
                 <SelectItem value="OTHER">Other</SelectItem>
+                <SelectItem value="Mixed">Mixed</SelectItem> {/* Added to match backend */}
               </SelectContent>
             </Select>
           </div>
@@ -347,7 +339,9 @@ const Marketplace = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
-            {filteredProducts.length === 0 ? (
+            {isLoading ? (
+              <div className="text-center py-12">Loading products...</div>
+            ) : filteredProducts.length === 0 ? (
               <div className="text-center py-12">
                 <Store className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
                 <h3 className="mt-4 text-lg font-medium">No products found</h3>
@@ -357,56 +351,57 @@ const Marketplace = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {filteredProducts.map((product) => (
-                  <Card key={product.id} className="overflow-hidden">
-                    <div className="aspect-video bg-muted relative">
-                      <img
-                        src={imageUrls[product.id] || "/placeholder.svg"}
-                        alt={product.name}
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          console.error(
-                            `Failed to load image for ${product.name}: ${imageUrls[product.id]}`
-                          );
-                          e.currentTarget.src = "/placeholder.svg";
-                        }}
-                      />
-                    </div>
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold text-lg">{product.name}</h3>
-                        <Badge variant="outline" className="ml-2">
-                          {product.category}
-                        </Badge>
+                {filteredProducts.map((product) => {
+                  console.log("Rendering product:", product);
+                  return (
+                    <Card key={product.id} className="overflow-hidden">
+                      <div className="aspect-video bg-muted relative">
+                        <img
+                          src={imageUrls[product.id] || "/placeholder.svg"}
+                          alt={product.name}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            console.error(`Failed to load image for ${product.name}: ${imageUrls[product.id]}`);
+                            e.currentTarget.src = "/placeholder.svg";
+                          }}
+                        />
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                        {product.description}
-                      </p>
-                      <div className="flex items-center text-sm text-muted-foreground mb-3">
-                        <Store className="h-3.5 w-3.5 mr-1" />
-                        <span>{product.farmerName}</span>
-                        <span className="mx-1">•</span>
-                        <span>{product.location}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="font-medium">
-                          ${product.price.toFixed(2)}
-                          <span className="text-sm text-muted-foreground ml-1">
-                            / {product.unit}
-                          </span>
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold text-lg">{product.name}</h3>
+                          <Badge variant="outline" className="ml-2">
+                            {product.category}
+                          </Badge>
                         </div>
-                        <Button
-                          size="sm"
-                          onClick={() => addToCart(product)}
-                          className="bg-farm-forest hover:bg-farm-forest/90"
-                        >
-                          <ShoppingCart className="h-4 w-4 mr-2" />
-                          <span>Add to Cart</span>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                          {product.description}
+                        </p>
+                        <div className="flex items-center text-sm text-muted-foreground mb-3">
+                          <Store className="h-3.5 w-3.5 mr-1" />
+                          <span>{product.farmerName}</span>
+                          <span className="mx-1">•</span>
+                          <span>{product.location}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <div className="font-medium">
+                            ${product.price.toFixed(2)}
+                            <span className="text-sm text-muted-foreground ml-1">
+                              / {product.unit}
+                            </span>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => addToCart(product)}
+                            className="bg-farm-forest hover:bg-farm-forest/90"
+                          >
+                            <ShoppingCart className="h-4 w-4 mr-2" />
+                            <span>Add to Cart</span>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -428,10 +423,7 @@ const Marketplace = () => {
                 <>
                   <div className="space-y-4 mb-6 max-h-[50vh] overflow-auto">
                     {cart.map((item) => (
-                      <div
-                        key={item.productId}
-                        className="flex gap-4 py-2 border-b"
-                      >
+                      <div key={item.productId} className="flex gap-4 py-2 border-b">
                         <div className="flex-1">
                           <h4 className="font-medium">{item.name}</h4>
                           <p className="text-sm text-muted-foreground">
@@ -446,22 +438,16 @@ const Marketplace = () => {
                             variant="outline"
                             size="sm"
                             className="h-8 w-8 p-0"
-                            onClick={() =>
-                              updateQuantity(item.productId, item.quantity - 1)
-                            }
+                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                           >
                             -
                           </Button>
-                          <span className="w-6 text-center">
-                            {item.quantity}
-                          </span>
+                          <span className="w-6 text-center">{item.quantity}</span>
                           <Button
                             variant="outline"
                             size="sm"
                             className="h-8 w-8 p-0"
-                            onClick={() =>
-                              updateQuantity(item.productId, item.quantity + 1)
-                            }
+                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                           >
                             +
                           </Button>
@@ -481,9 +467,7 @@ const Marketplace = () => {
                   <div className="border-t pt-4">
                     <div className="flex justify-between mb-4">
                       <span className="font-medium">Total:</span>
-                      <span className="font-bold">
-                        ${getTotalPrice().toFixed(2)}
-                      </span>
+                      <span className="font-bold">${getTotalPrice().toFixed(2)}</span>
                     </div>
                     <Button
                       className="w-full bg-farm-forest hover:bg-farm-forest/90"
@@ -504,9 +488,7 @@ const Marketplace = () => {
             {paymentComplete ? (
               <div className="py-6 text-center">
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <DialogTitle className="text-xl mb-2">
-                  Payment Successful!
-                </DialogTitle>
+                <DialogTitle className="text-xl mb-2">Payment Successful!</DialogTitle>
                 <DialogDescription>
                   Your order is confirmed and the farmers have been notified.
                 </DialogDescription>
@@ -516,8 +498,7 @@ const Marketplace = () => {
                 <DialogHeader>
                   <DialogTitle>Complete Your Purchase</DialogTitle>
                   <DialogDescription>
-                    Select a payment method and enter your details to complete
-                    your order.
+                    Select a payment method and enter your details to complete your order.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-6 py-4">
@@ -526,14 +507,8 @@ const Marketplace = () => {
                     <div className="flex gap-2">
                       <Button
                         type="button"
-                        variant={
-                          paymentMethod === "credit-card" ? "default" : "outline"
-                        }
-                        className={`flex-1 ${
-                          paymentMethod === "credit-card"
-                            ? "bg-farm-forest hover:bg-farm-forest/90"
-                            : ""
-                        }`}
+                        variant={paymentMethod === "credit-card" ? "default" : "outline"}
+                        className={`flex-1 ${paymentMethod === "credit-card" ? "bg-farm-forest hover:bg-farm-forest/90" : ""}`}
                         onClick={() => setPaymentMethod("credit-card")}
                       >
                         <CreditCard className="h-4 w-4 mr-2" />
@@ -541,32 +516,16 @@ const Marketplace = () => {
                       </Button>
                       <Button
                         type="button"
-                        variant={
-                          paymentMethod === "bank-transfer"
-                            ? "default"
-                            : "outline"
-                        }
-                        className={`flex-1 ${
-                          paymentMethod === "bank-transfer"
-                            ? "bg-farm-forest hover:bg-farm-forest/90"
-                            : ""
-                        }`}
+                        variant={paymentMethod === "bank-transfer" ? "default" : "outline"}
+                        className={`flex-1 ${paymentMethod === "bank-transfer" ? "bg-farm-forest hover:bg-farm-forest/90" : ""}`}
                         onClick={() => setPaymentMethod("bank-transfer")}
                       >
                         Bank Transfer
                       </Button>
                       <Button
                         type="button"
-                        variant={
-                          paymentMethod === "cash-on-delivery"
-                            ? "default"
-                            : "outline"
-                        }
-                        className={`flex-1 ${
-                          paymentMethod === "cash-on-delivery"
-                            ? "bg-farm-forest hover:bg-farm-forest/90"
-                            : ""
-                        }`}
+                        variant={paymentMethod === "cash-on-delivery" ? "default" : "outline"}
+                        className={`flex-1 ${paymentMethod === "cash-on-delivery" ? "bg-farm-forest hover:bg-farm-forest/90" : ""}`}
                         onClick={() => setPaymentMethod("cash-on-delivery")}
                       >
                         Cash on Delivery
@@ -581,9 +540,7 @@ const Marketplace = () => {
                           id="card-number"
                           placeholder="1234 5678 9012 3456"
                           value={cardNumber}
-                          onChange={(e) =>
-                            setCardNumber(formatCardNumber(e.target.value))
-                          }
+                          onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
                           maxLength={19}
                         />
                       </div>
@@ -624,17 +581,14 @@ const Marketplace = () => {
                   {paymentMethod === "bank-transfer" && (
                     <div className="space-y-4">
                       <div className="bg-muted p-4 rounded-md text-sm">
-                        <p className="font-medium mb-2">
-                          Bank Transfer Details:
-                        </p>
+                        <p className="font-medium mb-2">Bank Transfer Details:</p>
                         <p>Bank Name: Farm Fresh Bank</p>
                         <p>Account Name: Farm Fresh Marketplace</p>
                         <p>Account Number: 1234567890</p>
                         <p>Sort Code: 12-34-56</p>
                         <p>Reference: Your Order #</p>
                         <p className="mt-2 italic">
-                          Please use your order number as reference when making the
-                          transfer.
+                          Please use your order number as reference when making the transfer.
                         </p>
                       </div>
                     </div>
@@ -642,13 +596,9 @@ const Marketplace = () => {
                   {paymentMethod === "cash-on-delivery" && (
                     <div className="space-y-4">
                       <div className="bg-muted p-4 rounded-md text-sm">
-                        <p>
-                          You will pay for your order when it's delivered to your
-                          address.
-                        </p>
+                        <p>You will pay for your order when it's delivered to your address.</p>
                         <p className="mt-2">
-                          Please have the exact amount ready to ensure a smooth
-                          delivery process.
+                          Please have the exact amount ready to ensure a smooth delivery process.
                         </p>
                       </div>
                     </div>
@@ -669,9 +619,7 @@ const Marketplace = () => {
                     disabled={isProcessingPayment}
                   >
                     {isProcessingPayment ? "Processing..." : "Complete Payment"}
-                    {!isProcessingPayment && (
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    )}
+                    {!isProcessingPayment && <ArrowRight className="h-4 w-4 ml-2" />}
                   </Button>
                 </DialogFooter>
               </>
@@ -689,18 +637,14 @@ const Marketplace = () => {
                 <span className="font-bold text-xl">Hinga</span>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Connecting farmers directly to consumers for fresher, more
-                sustainable food.
+                Connecting farmers directly to consumers for fresher, more sustainable food.
               </p>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2">
                 <li>
-                  <Link
-                    to="/"
-                    className="text-sm text-muted-foreground hover:text-farm-forest"
-                  >
+                  <Link to="/" className="text-sm text-muted-foreground hover:text-farm-forest">
                     Home
                   </Link>
                 </li>

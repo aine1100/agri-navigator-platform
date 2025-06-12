@@ -39,12 +39,7 @@ const BuyerSidebar = () => {
       href: "/buyer/dashboard",
       active: location.pathname === "/buyer/dashboard",
     },
-    {
-      title: "Marketplace",
-      icon: Leaf,
-      href: "/buyer/marketplace",
-      active: location.pathname === "/buyer/marketplace",
-    },
+    
     {
       title: "Cart",
       icon: ShoppingCart,
@@ -57,18 +52,7 @@ const BuyerSidebar = () => {
       href: "/buyer/orders",
       active: location.pathname === "/buyer/orders",
     },
-    {
-      title: "Payments",
-      icon: Wallet,
-      href: "/buyer/payments",
-      active: location.pathname === "/buyer/payments",
-    },
-    {
-      title: "Settings",
-      icon: User,
-      href: "/buyer/settings",
-      active: location.pathname === "/buyer/settings",
-    },
+    
   ];
 
   const handleLogout = async () => {

@@ -315,7 +315,7 @@ const BuyerDashboard = () => {
   };
 
   const filteredAndSortedLivestock = sortLivestock(
-    livestock.filter(item =>
+    livestock.filter(item =>item.quantity >1 &&
       item.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.breed.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||

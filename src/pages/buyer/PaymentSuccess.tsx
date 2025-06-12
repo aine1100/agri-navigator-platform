@@ -16,6 +16,7 @@ interface OrderDetails {
       type: string;
       breed: string;
       price: number;
+      totalPrice:number;
     };
     quantity: number;
     totalPrice: number;
@@ -60,6 +61,8 @@ const PaymentSuccess = () => {
 
         const orderData = await response.json();
         setOrderDetails(orderData);
+
+        console.log(orderData)
 
         if (orderData.paymentStatus === "PAID") {
           setVerificationStatus("Payment Successful! Your order has been confirmed.");
@@ -135,7 +138,7 @@ const PaymentSuccess = () => {
                 Order ID: {orderDetails.id || "N/A"}
               </p>
               <p className="text-sm text-gray-500">
-                Total Amount: ${formatAmount(orderDetails.totalAmount)}
+                Total Amount: ${formatAmount(orderDetails.carts.reduce((acc, cart) => acc + cart.totalPrice, 0))}
               </p>
               <p className="text-sm text-gray-500">
                 Order Date: {formatDate(orderDetails.orderDate)}

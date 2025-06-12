@@ -193,6 +193,8 @@ const Orders = () => {
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Order Date</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Delivery Address</th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Payment Status</th>
+
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -211,13 +213,13 @@ const Orders = () => {
                       <div className="flex items-center gap-2">
                         <Badge variant={
                           order.orderStatus === "PENDING" ? "secondary" :
-                          order.orderStatus === "SHIPPPED" ? "outline" :
+                          order.orderStatus === "APPROVED" ? "outline" :
                           order.orderStatus === "CANCELLED" ? "destructive" :
                           "default"
                         }>
                           {order.orderStatus}
                         </Badge>
-                        {order.orderStatus === "SHIPPED" && order.paymentStatus !== "PAID" && (
+                        {order.orderStatus === "APPROVED" && order.paymentStatus !== "PAID" && (
                           <Button
                             onClick={() => handlePayNow(order.id)}
                             size="sm"
@@ -226,6 +228,19 @@ const Orders = () => {
                             Pay Now
                           </Button>
                         )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={
+                          order.paymentStatus === "PENDING" ? "secondary" :
+                          order.paymentStatus === "PAID" ? "outline" :
+                          order.paymentStatus === "CANCELLED" ? "destructive" :
+                          "default"
+                        }>
+                          {order.paymentStatus}
+                        </Badge>
+                        
                       </div>
                     </td>
                   </tr>
