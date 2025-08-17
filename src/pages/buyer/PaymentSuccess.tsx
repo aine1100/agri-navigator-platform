@@ -48,7 +48,7 @@ const PaymentSuccess = () => {
           return;
         }
 
-        const response = await fetch(`http://localhost:8080/api/orders/${orderId}`, {
+        const response = await fetch(`https://hingabackend-production.up.railway.app/api/orders/${orderId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

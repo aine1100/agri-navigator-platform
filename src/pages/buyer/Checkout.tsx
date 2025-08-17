@@ -79,7 +79,7 @@ const Checkout = () => {
       // Fetch only the selected cart items
       const items = await Promise.all(
         selectedCartIds.map(async (cartId) => {
-          const response = await fetch(`http://localhost:8080/api/cart/${cartId}`, {
+          const response = await fetch(`https://hingabackend-production.up.railway.app/api/cart/${cartId}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -109,7 +109,7 @@ const Checkout = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8080/api/orders/create-from-cart", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/orders/create-from-cart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

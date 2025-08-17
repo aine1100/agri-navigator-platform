@@ -54,7 +54,7 @@ const Settings = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8080/api/users/profile", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/users/profile", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -80,7 +80,7 @@ const Settings = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8080/api/users/profile", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/users/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -109,7 +109,7 @@ const Settings = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8080/api/users/notifications", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/users/notifications", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -55,7 +55,7 @@ const Orders = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8080/api/orders/buyer", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/orders/buyer", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -133,7 +133,7 @@ const Orders = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:8080/api/orders/${orderId}/pay`, {
+      const response = await fetch(`https://hingabackend-production.up.railway.app/api/orders/${orderId}/pay`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -213,7 +213,7 @@ const FarmerDashboard = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8080/api/livestock/v2/get", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/livestock/v2/get", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -281,7 +281,7 @@ const FarmerDashboard = () => {
         formData.append("image", data.image);
       }
 
-      const response = await fetch("http://localhost:8080/api/livestock/v2/add", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/livestock/v2/add", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -323,7 +323,7 @@ const FarmerDashboard = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8080/api/orders/farmer", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/orders/farmer", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -878,7 +878,7 @@ const FarmerDashboard = () => {
                           src={
                             item.imageUrls.startsWith("http")
                               ? item.imageUrls
-                              : `http://localhost:8080${item.imageUrls}`
+                              : `https://hingabackend-production.up.railway.app${item.imageUrls}`
                           }
                           alt={item.type}
                           className="w-full h-48 object-cover rounded-md mt-2"

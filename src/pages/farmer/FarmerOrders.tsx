@@ -166,7 +166,7 @@ const FarmerOrders = () => {
   const handleReject = async (orderId: number) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:8080/api/orders/${orderId}/cancel`, {
+      const response = await fetch(`https://hingabackend-production.up.railway.app/api/orders/${orderId}/cancel`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -194,7 +194,7 @@ const FarmerOrders = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8080/api/orders/farmer/download", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/orders/farmer/download", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

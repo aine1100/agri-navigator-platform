@@ -79,7 +79,7 @@ const BuyerDashboard = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8080/api/livestock/v2/all", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/livestock/v2/all", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -125,7 +125,7 @@ const BuyerDashboard = () => {
         return;
       }
       const decoded = jwtDecode<JwtPayload>(token);
-      const response = await fetch(`http://localhost:8080/api/cart`, {
+      const response = await fetch(`https://hingabackend-production.up.railway.app/api/cart`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -166,7 +166,7 @@ const BuyerDashboard = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8080/api/cart/create-cart", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/cart/create-cart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -205,7 +205,7 @@ const BuyerDashboard = () => {
       }
       const decoded = jwtDecode(token);
 
-      const response = await fetch(`http://localhost:8080/api/cart/${cartId}/${decoded.id}`, {
+      const response = await fetch(`https://hingabackend-production.up.railway.app/api/cart/${cartId}/${decoded.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -238,7 +238,7 @@ const BuyerDashboard = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:8080/api/cart/${cartId}`, {
+      const response = await fetch(`https://hingabackend-production.up.railway.app/api/cart/${cartId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -418,7 +418,7 @@ const BuyerDashboard = () => {
                   <CardContent>
                     <div className="aspect-video relative mb-4">
                       <img
-                        src={item.imageUrls.startsWith('http') ? item.imageUrls : `http://localhost:8080${item.imageUrls}`}
+                        src={item.imageUrls.startsWith('http') ? item.imageUrls : `https://hingabackend-production.up.railway.app${item.imageUrls}`}
                         alt={item.type}
                         className="object-cover rounded-md w-full h-full"
                         onError={(e) => {
@@ -550,7 +550,7 @@ const BuyerDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="relative aspect-video">
                   <img
-                    src={selectedProduct.imageUrls.startsWith('http') ? selectedProduct.imageUrls : `http://localhost:8080${selectedProduct.imageUrls}`}
+                    src={selectedProduct.imageUrls.startsWith('http') ? selectedProduct.imageUrls : `https://hingabackend-production.up.railway.app${selectedProduct.imageUrls}`}
                     alt={selectedProduct.type}
                     className="object-cover rounded-md w-full h-full"
                     onError={(e) => {

@@ -114,7 +114,7 @@ const FarmerLivestock = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8080/api/livestock/v2/get", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/livestock/v2/get", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

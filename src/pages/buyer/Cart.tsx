@@ -43,7 +43,7 @@ const Cart = () => {
       }
       console.log(token)
       const decoded = jwtDecode<any>(token);
-      const response = await fetch(`http://localhost:8080/api/cart`, {
+      const response = await fetch(`https://hingabackend-production.up.railway.app/api/cart`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -73,7 +73,7 @@ const Cart = () => {
         return;
       }
       
-      const response = await fetch(`http://localhost:8080/api/cart/${cartId}`, {
+      const response = await fetch(`https://hingabackend-production.up.railway.app/api/cart/${cartId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -107,7 +107,7 @@ const Cart = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:8080/api/cart/${cartId}`, {
+      const response = await fetch(`https://hingabackend-production.up.railway.app/api/cart/${cartId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -140,7 +140,7 @@ const Cart = () => {
       }
       const decoded = jwtDecode<any>(token);
       
-      const response = await fetch(`http://localhost:8080/api/cart/clear/${decoded.id}`, {
+      const response = await fetch(`https://hingabackend-production.up.railway.app/api/cart/clear/${decoded.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -234,7 +234,7 @@ const Cart = () => {
                           item.livestock?.imageUrls
                             ? (item.livestock.imageUrls.startsWith('http')
                                 ? item.livestock.imageUrls
-                                : `http://localhost:8080${item.livestock.imageUrls}`)
+                                : `https://hingabackend-production.up.railway.app${item.livestock.imageUrls}`)
                             : '/placeholder.svg'
                         }
                         alt={item.livestock?.type || 'Unknown Livestock'}

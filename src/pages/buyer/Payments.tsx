@@ -51,7 +51,7 @@ const Payments = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8080/api/payments/methods", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/payments/methods", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -74,7 +74,7 @@ const Payments = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8080/api/payments/transactions", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/payments/transactions", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -15,7 +15,7 @@ const FarmerFinancials = () => {
   const [netIncome, setNetIncome] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const API_BASE_URL = 'http://localhost:8080/api';
+  const API_BASE_URL = 'https://hingabackend-production.up.railway.app/api';
 
   useEffect(() => {
     const token = localStorage.getItem("token");

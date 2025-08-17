@@ -48,7 +48,7 @@ const Payment = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:8080/api/orders/${orderId}`, {
+      const response = await fetch(`https://hingabackend-production.up.railway.app/api/orders/${orderId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -86,7 +86,7 @@ const Payment = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await fetch(`http://localhost:8080/api/payments/create-payment-intent/${orderId}`, {
+      const response = await fetch(`https://hingabackend-production.up.railway.app/api/payments/create-payment-intent/${orderId}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

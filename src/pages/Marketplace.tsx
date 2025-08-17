@@ -37,7 +37,7 @@ import { Label } from "@/components/ui/label";
 import { handleTokenExpiration } from "@/utils/auth";
 
 // Backend base URL for API and image fetching
-const BACKEND_BASE_URL = "http://localhost:8080";
+const BACKEND_BASE_URL = "https://hingabackend-production.up.railway.app";
 
 // Product type based on backend database
 type Product = {

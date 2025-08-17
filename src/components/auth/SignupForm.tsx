@@ -90,7 +90,7 @@ const SignupForm = () => {
         resetToken: null // This will be handled by the backend
       };
 
-      const response = await fetch("http://localhost:8080/api/auth/v2/Register", {
+      const response = await fetch("https://hingabackend-production.up.railway.app/api/auth/v2/Register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

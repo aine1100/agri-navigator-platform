@@ -17,7 +17,7 @@ const ConfirmResetPassword = () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ token, newPassword });
-      const res = await fetch(`http://localhost:8080/api/auth/v2/reset-password/confirm?${params.toString()}`, {
+      const res = await fetch(`https://hingabackend-production.up.railway.app/api/auth/v2/reset-password/confirm?${params.toString()}`, {
         method: "POST",
       });
       const data = await res.text();

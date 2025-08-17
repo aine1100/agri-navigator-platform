@@ -13,7 +13,7 @@ const RequestResetPassword = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/auth/v2/reset-password/request", {
+      const res = await fetch("https://hingabackend-production.up.railway.app/api/auth/v2/reset-password/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
