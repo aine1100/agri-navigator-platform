@@ -59,7 +59,7 @@ const BuyerSidebar = () => {
     const token = localStorage.getItem("token");
     try {
       if (token) {
-        await fetch("http://localhost:8080/api/auth/logout", {
+        await fetch("https://hingabackend-production.up.railway.app/api/auth/logout", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
